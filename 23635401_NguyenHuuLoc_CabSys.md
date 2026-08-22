@@ -1386,22 +1386,3 @@ Các thông số dưới đây được thiết lập dưới dạng **Tham số
 | **OQ07** | **Chính sách xử lý sự cố cổng thanh toán** | Khi cổng thanh toán gặp sự cố kéo dài, hệ thống tạm khóa chức năng trả qua thẻ hay tự động chuyển toàn bộ sang tiền mặt? |
 | **OQ08** | **Thời hạn lưu trữ vết kiểm toán** | Doanh nghiệp yêu cầu lưu vết lịch sử GPS chi tiết và nhật ký thao tác quản trị trong thời hạn bao lâu phục vụ thanh tra? |
 
----
-
-### 10.5. Tổng hợp Logic Vận hành Business Rules
-
-Luồng xử lý nghiệp vụ xuyên suốt của hệ thống CAB được chuẩn hóa theo chuỗi liên kết sau:
-
-$$\text{Khách hàng hợp lệ (RULE-01)} \longrightarrow \text{Tạo yêu cầu đặt xe (FR06)} \longrightarrow \text{Quét tài xế phù hợp (RULE-02)}$$
-
-$$\longrightarrow \text{Tài xế tiếp nhận cuốc (RULE-03 / UC12)} \longrightarrow \text{Cập nhật hành trình thời gian thực (UC14)}$$
-
-$$\longrightarrow \text{Hoàn thành \& Chốt Final Fare (RULE-04)} \longrightarrow \text{Xử lý Thanh toán \& Fallback (RULE-05, RULE-06)}$$
-
-$$\longrightarrow \text{Đánh giá chất lượng \& Lưu vết Kiểm toán (RULE-07, FR30)}$$
-
-* **Business Rules (10.1):** Đóng vai trò là các điều kiện tiên quyết và ràng buộc kiểm tra tại từng mắt xích.
-* **Exceptions (10.2):** Xác định kịch bản chuyển nhánh an toàn khi điều kiện bình thường không được đáp ứng.
-* **MVP Assumptions (10.3):** Cung cấp bộ tham số số liệu chuẩn xác để đưa vào mã nguồn và cơ sở dữ liệu phục vụ vận hành sản phẩm.
-* **Open Questions (10.4):** Định hình các câu hỏi nghiệp vụ giúp hoàn thiện tài liệu khi khách hàng ban hành quy định chính thức.
-
