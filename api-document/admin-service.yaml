@@ -1,0 +1,642 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Admin & Analytics Microservice API
+  description: |
+    ### Phân hệ 5: Quản trị, Đánh giá & Báo cáo (Quản trị viên & Analytics Service)
+    - **Đề tài**: Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh (CAB System)
+    - **Tác giả**: Nguyễn Hữu Lộc - MSSV: 23635401
+    - **Phạm vi Use Case**:
+      - `UC08`: Đánh giá tài xế (Khách hàng)
+      - `UC15`: Quản lý người dùng & Duyệt hồ sơ phương tiện tài xế (Nhân viên Vận hành)
+      - `UC16`: Giám sát bản đồ số thời gian thực & Can thiệp sự cố cuốc xe (Nhân viên Vận hành)
+      - `UC17`: Xem báo cáo thống kê KPI doanh thu & hiệu suất (Ban lãnh đạo)
+    - **Yêu cầu chức năng**: `FR25`, `FR26`, `FR27`, `FR28`, `FR29`, `FR30`, `FR31`, `FR32`
+    - **Quy tắc nghiệp vụ**:
+      - `RULE-07`: Mọi thao tác can thiệp quản trị bắt buộc nhập lý do, tự động ghi nhật ký kiểm toán `audit_logs` (chế độ chỉ đọc, không thể sửa/xóa).
+      - `EX08`: Xử lý cưỡng chế khi cuốc xe bị treo trạng thái hoặc tài xế/khách hàng báo sự cố khẩn cấp.
+    - **Cơ sở dữ liệu đề xuất**: PostgreSQL Read-Replica (`AdminDB`)
+  version: 1.0.0-mvp
+  contact:
+    name: Nguyễn Hữu Lộc
+    email: 23635401@student.edu.vn
+
+servers:
+  - url: http://localhost:8085/api/v1
+    description: Local Admin & Analytics Service
+  - url: https://api.cabsystem.vn/api/v1
+    description: API Gateway (Production)
+
+tags:
+  - name: Reviews & Ratings
+    description: Đánh giá chất lượng phục vụ của tài xế
+  - name: User & Driver Administration
+    description: Quản lý người dùng, khóa/mở tài khoản và phê duyệt phương tiện
+  - name: Live Monitoring & Incident Intervention
+    description: Bản đồ số giám sát cuốc xe trực tiếp và xử lý sự cố cưỡng chế
+  - name: Analytics & Audit Logs
+    description: Báo cáo chỉ số KPI tài chính và nhật ký kiểm toán hệ thống
+
+paths:
+  /reviews:
+    post:
+      tags:
+        - Reviews & Ratings
+      summary: Khách hàng chấm điểm và đánh giá tài xế (UC08 / FR25)
+      description: Cho phép chấm điểm 1-5 sao, chọn tag nhận xét và nhập bình luận sau khi cuốc xe hoàn tất.
+      operationId: submitDriverReview
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitReviewRequest'
+            example:
+              ride_id: "e3a89c91-9e20-4e55-89b1-6a0b12d34e56"
+              rating_stars: 5
+              feedback_tags: ["Lái xe an toàn", "Xe sạch sẽ", "Thân thiện"]
+              comment: "Tài xế rất lịch sự và nhiệt tình hỗ trợ hành lý."
+      responses:
+        '201':
+          description: Gửi đánh giá thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  review_id:
+                    type: string
+                    format: uuid
+                  message:
+                    type: string
+                    example: "Cảm ơn bạn đã đánh giá dịch vụ!"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /admin/users:
+    get:
+      tags:
+        - User & Driver Administration
+      summary: Quản trị viên xem và tìm kiếm danh sách người dùng (UC15 / FR26)
+      operationId: getAdminUsers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [CUSTOMER, DRIVER, OPERATOR]
+        - name: search
+          in: query
+          description: Tìm theo Họ tên, SĐT hoặc Email
+          schema:
+            type: string
+            example: "090123"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, SUSPENDED, PENDING]
+      responses:
+        '200':
+          description: Danh sách người dùng
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminUserItem'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /admin/users/{userId}/status:
+    put:
+      tags:
+        - User & Driver Administration
+      summary: Khóa hoặc Mở khóa tài khoản người dùng (UC15 / FR26 / RULE-07)
+      description: Can thiệp trạng thái hoạt động của tài khoản; bắt buộc nhập lý do để lưu Audit Log.
+      operationId: updateUserAccountStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+                - reason
+              properties:
+                status:
+                  type: string
+                  enum: [ACTIVE, SUSPENDED]
+                  example: "SUSPENDED"
+                reason:
+                  type: string
+                  example: "Khách hàng có hành vi gian lận mã khuyến mãi nhiều lần."
+      responses:
+        '200':
+          description: Cập nhật trạng thái tài khoản thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user_id:
+                    type: string
+                    format: uuid
+                  new_status:
+                    type: string
+                    example: "SUSPENDED"
+                  message:
+                    type: string
+                    example: "Tài khoản đã được cập nhật trạng thái."
+
+  /admin/drivers/{driverId}/vehicles/{vehicleId}/approval:
+    put:
+      tags:
+        - User & Driver Administration
+      summary: Phê duyệt hoặc từ chối hồ sơ phương tiện của Tài xế (UC15 / FR27 / RULE-07)
+      operationId: approveDriverVehicle
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - decision
+              properties:
+                decision:
+                  type: string
+                  enum: [APPROVED, REJECTED]
+                  example: "APPROVED"
+                rejection_reason:
+                  type: string
+                  nullable: true
+                  example: "Ảnh giấy phép lái xe mờ, không rõ ngày cấp."
+      responses:
+        '200':
+          description: Xử lý duyệt hồ sơ thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  vehicle_id:
+                    type: string
+                    format: uuid
+                  approval_status:
+                    type: string
+                    example: "APPROVED"
+
+  /admin/rides/live-monitor:
+    get:
+      tags:
+        - Live Monitoring & Incident Intervention
+      summary: Giám sát các cuốc xe đang hoạt động trên bản đồ số trực tiếp (UC16 / FR28)
+      description: Trả về danh sách tất cả các cuốc xe đang ở trạng thái `MATCHING`, `ACCEPTED`, `DRIVER_ARRIVED`, `IN_TRANSIT` kèm tọa độ GPS mới nhất.
+      operationId: getLiveActiveRides
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Danh sách cuốc xe đang vận hành thời gian thực
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_active_rides:
+                    type: integer
+                    example: 38
+                  rides:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LiveRideMonitorItem'
+
+  /admin/rides/{rideId}/intervention:
+    post:
+      tags:
+        - Live Monitoring & Incident Intervention
+      summary: Quản trị viên can thiệp xử lý sự cố cuốc xe khẩn cấp (UC16 / FR29 / FR30 / RULE-07 / EX08)
+      description: |
+        Áp dụng khi cuốc xe bị kẹt trạng thái hoặc xảy ra sự cố va chạm, tài xế không bấm được app.
+        **Bắt buộc nhập trường `reason`**; hệ thống tự động ghi nhật ký kiểm toán `audit_logs`.
+      operationId: interveneRideIncident
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+                - reason
+              properties:
+                action:
+                  type: string
+                  enum: [FORCE_CANCEL, FORCE_COMPLETE, RE_DISPATCH]
+                  example: "FORCE_CANCEL"
+                reason:
+                  type: string
+                  description: Lý do can thiệp quản trị bắt buộc
+                  example: "Xe tài xế gặp sự cố nổ lốp trên đường đón khách, hỗ trợ hủy không tính phí."
+                apply_cancellation_fee:
+                  type: boolean
+                  default: false
+                  example: false
+      responses:
+        '200':
+          description: Can thiệp cuốc xe thành công, đã lưu vết Audit Log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  ride_id:
+                    type: string
+                    format: uuid
+                  new_status:
+                    type: string
+                    example: "CANCELLED_BY_OPERATOR"
+                  audit_log_id:
+                    type: string
+                    format: uuid
+                    example: "991823ab-1234-4a5b-b991-0d6d5a1b32d9"
+                  message:
+                    type: string
+                    example: "Đã can thiệp xử lý cuốc xe thành công."
+
+  /admin/audit-logs:
+    get:
+      tags:
+        - Analytics & Audit Logs
+      summary: Tra cứu nhật ký kiểm toán can thiệp hệ thống (FR30 / RULE-07)
+      description: Danh sách vết kiểm toán chế độ chỉ đọc (Read-only), phục vụ đối soát và thanh tra.
+      operationId: getAuditLogs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: action
+          in: query
+          schema:
+            type: string
+            example: "FORCE_CANCEL"
+      responses:
+        '200':
+          description: Danh sách nhật ký kiểm toán
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditLogItem'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /admin/analytics/overview:
+    get:
+      tags:
+        - Analytics & Audit Logs
+      summary: Báo cáo chỉ số KPI vận hành & doanh thu tổng quan (UC17 / FR31)
+      description: Thống kê tổng doanh thu, số cuốc thành công, tỷ lệ hoàn thành, tỷ lệ hủy.
+      operationId: getAnalyticsOverview
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: from_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          example: "2026-09-01"
+        - name: to_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          example: "2026-09-07"
+      responses:
+        '200':
+          description: Thống kê KPI báo cáo tổng quan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsOverviewResponse'
+
+  /admin/analytics/driver-performance:
+    get:
+      tags:
+        - Analytics & Audit Logs
+      summary: Báo cáo hiệu suất và điểm đánh giá của đối tác tài xế (UC17 / FR32)
+      operationId: getDriverPerformanceReport
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Danh sách hiệu suất tài xế
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DriverPerformanceItem'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SubmitReviewRequest:
+      type: object
+      required:
+        - ride_id
+        - rating_stars
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        rating_stars:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        feedback_tags:
+          type: array
+          items:
+            type: string
+          example: ["Lái xe an toàn", "Xe sạch sẽ"]
+        comment:
+          type: string
+          example: "Tài xế rất lịch sự và phục vụ chu đáo."
+
+    AdminUserItem:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        phone_number:
+          type: string
+          example: "0901234567"
+        full_name:
+          type: string
+          example: "Nguyễn Văn A"
+        email:
+          type: string
+          example: "nguyenvana@gmail.com"
+        role:
+          type: string
+          example: "CUSTOMER"
+        status:
+          type: string
+          example: "ACTIVE"
+        total_trips:
+          type: integer
+          example: 18
+        created_at:
+          type: string
+          format: date-time
+
+    LiveRideMonitorItem:
+      type: object
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: "IN_TRANSIT"
+        customer_name:
+          type: string
+          example: "Nguyễn Văn A"
+        driver_name:
+          type: string
+          example: "Trần Văn B"
+        vehicle_plate:
+          type: string
+          example: "51K-123.45"
+        pickup_address:
+          type: string
+          example: "Chợ Bến Thành, Quận 1"
+        dropoff_address:
+          type: string
+          example: "Sân bay Tân Sơn Nhất"
+        driver_current_coordinates:
+          type: object
+          properties:
+            latitude:
+              type: number
+              example: 10.7921
+            longitude:
+              type: number
+              example: 106.6812
+
+    AuditLogItem:
+      type: object
+      properties:
+        log_id:
+          type: string
+          format: uuid
+        admin_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          example: "FORCE_CANCEL"
+        target_resource:
+          type: string
+          example: "Ride:e3a89c91-9e20-4e55-89b1-6a0b12d34e56"
+        reason:
+          type: string
+          example: "Xe nổ lốp, can thiệp hủy chuyến"
+        ip_address:
+          type: string
+          example: "192.168.1.50"
+        timestamp:
+          type: string
+          format: date-time
+
+    AnalyticsOverviewResponse:
+      type: object
+      properties:
+        total_revenue_vnd:
+          type: number
+          example: 125400000
+        total_trips:
+          type: integer
+          example: 1540
+        completed_trips:
+          type: integer
+          example: 1420
+        cancelled_trips:
+          type: integer
+          example: 120
+        completion_rate_percentage:
+          type: number
+          format: float
+          example: 92.2
+        cancellation_rate_percentage:
+          type: number
+          format: float
+          example: 7.8
+        average_trip_fare_vnd:
+          type: number
+          example: 88300
+
+    DriverPerformanceItem:
+      type: object
+      properties:
+        driver_id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+          example: "Trần Văn B"
+        vehicle_plate:
+          type: string
+          example: "51K-123.45"
+        total_completed_trips:
+          type: integer
+          example: 165
+        acceptance_rate_percentage:
+          type: number
+          example: 94.5
+        average_rating_stars:
+          type: number
+          format: float
+          example: 4.85
+        total_earnings_vnd:
+          type: number
+          example: 14500000
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 10
+        total_items:
+          type: integer
+          example: 35
+        total_pages:
+          type: integer
+          example: 4
+
+    ErrorResponse:
+      type: object
+      required:
+        - error_code
+        - message
+        - timestamp
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequestError:
+      description: Tham số không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

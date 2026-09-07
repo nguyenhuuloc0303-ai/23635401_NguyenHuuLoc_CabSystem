@@ -1,0 +1,724 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Ride & Dispatch Core Engine API
+  description: |
+    ### Phân hệ 2: Điều phối & Quản lý Chuyến đi (Ride & Dispatch Service)
+    - **Đề tài**: Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh (CAB System)
+    - **Tác giả**: Nguyễn Hữu Lộc - MSSV: 23635401
+    - **Phạm vi Use Case**:
+      - `UC04`: Đặt xe & Dự toán cước phí (Khách hàng)
+      - `UC05`: Hủy yêu cầu đặt xe & Phí phạt hủy (Khách hàng)
+      - `UC06`: Theo dõi chuyến đi & GPS thời gian thực (Khách hàng)
+      - `UC09`: Xem lịch sử chuyến đi (Khách hàng & Tài xế)
+      - `UC11`: Bật / Tắt trạng thái hoạt động Online / Offline (Tài xế)
+      - `UC12`: Tiếp nhận chuyến xe (Tài xế - Timeout 20s)
+      - `UC13`: Từ chối chuyến xe (Tài xế)
+      - `UC14`: Cập nhật tiến trình cuốc xe (`DRIVER_ARRIVED` -> `IN_TRANSIT` -> `COMPLETED`)
+    - **Yêu cầu chức năng**: `FR06`, `FR07`, `FR08`, `FR09`, `FR10`, `FR11`, `FR12`, `FR13`, `FR14`, `FR15`, `FR16`, `FR17`, `FR18`
+    - **Công nghệ lưu trữ**: PostgreSQL (`RideDB`) + Redis Geospatial (quét tài xế qua `GEORADIUS`) + WebSocket
+    - **Tham số vận hành**: ASM-01 (Công thức cước), ASM-02 (Bán kính quét 3km - 5km), ASM-03 (Timeout 20s), ASM-04 (Hủy sau 2 phút phạt 10.000đ), ASM-06 (Buffer 50 điểm GPS offline).
+  version: 1.0.0-mvp
+  contact:
+    name: Nguyễn Hữu Lộc
+    email: 23635401@student.edu.vn
+
+servers:
+  - url: http://localhost:8082/api/v1
+    description: Local Ride & Dispatch Service
+  - url: https://api.cabsystem.vn/api/v1
+    description: API Gateway (Production)
+
+tags:
+  - name: Ride Booking & Estimation
+    description: Báo giá ước tính, khởi tạo yêu cầu chuyến xe và hủy chuyến
+  - name: Trip Lifecycle & Tracking
+    description: Cập nhật trạng thái lộ trình, tracking GPS thời gian thực
+  - name: Driver Dispatch Operations
+    description: Tiếp nhận, từ chối cuốc, bật/tắt Online và cập nhật tọa độ GPS
+
+paths:
+  /rides/estimate:
+    post:
+      tags:
+        - Ride Booking & Estimation
+      summary: Tính cước ước tính & lộ trình dự kiến (FR07 / ASM-01)
+      description: |
+        Tính toán cự ly, thời gian dự kiến (ETA) và cước phí ước tính trước khi đặt xe.
+        Áp dụng công thức cước chuẩn ngành theo loại xe:
+        - **CabBike**: 12.000đ (2km đầu) | 4.500đ/km tiếp | 300đ/phút
+        - **CabCar 4 chỗ**: 20.000đ (2km đầu) | 10.000đ/km tiếp | 600đ/phút
+        - **CabCar 7 chỗ**: 25.000đ (2km đầu) | 12.500đ/km tiếp | 800đ/phút
+        - **Hệ số cao điểm**: Mặc định 1.0 (Giờ cao điểm: 1.2)
+      operationId: estimateFare
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RideEstimateRequest'
+            example:
+              pickup_location:
+                latitude: 10.7769
+                longitude: 106.7009
+                address: "Chợ Bến Thành, Quận 1, TP.HCM"
+              dropoff_location:
+                latitude: 10.8231
+                longitude: 106.6297
+                address: "Sân bay Quốc tế Tân Sơn Nhất, Tân Bình, TP.HCM"
+              vehicle_type: "CAR_4"
+      responses:
+        '200':
+          description: Tính cước ước tính thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideEstimateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /rides:
+    post:
+      tags:
+        - Ride Booking & Estimation
+      summary: Khởi tạo yêu cầu đặt chuyến xe mới (UC04 / FR06 / FR10 / RULE-01)
+      description: |
+        Khách hàng gửi yêu cầu đặt xe. Hệ thống tạo cuốc xe ở trạng thái `MATCHING`,
+        kích hoạt thuật toán Redis Geospatial quét tài xế gần nhất trong bán kính 3km (mở rộng 5km).
+      operationId: createRideRequest
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRideRequest'
+      responses:
+        '201':
+          description: Tạo cuốc xe thành công, đang điều phối tài xế
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Khách hàng đang có cuốc xe chưa hoàn tất hoặc tài khoản bị khóa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_code: "ONGOING_RIDE_EXISTS"
+                message: "Bạn đang có chuyến đi đang diễn ra. Vui lòng hoàn thành chuyến hiện tại."
+                timestamp: "2026-09-07T18:45:00Z"
+
+  /rides/{rideId}:
+    get:
+      tags:
+        - Trip Lifecycle & Tracking
+      summary: Lấy thông tin chi tiết và trạng thái cuốc xe (UC06 / FR17)
+      description: Tra cứu trạng thái hiện tại của chuyến, thông tin tài xế, xe và tọa độ GPS mới nhất.
+      operationId: getRideById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "e3a89c91-9e20-4e55-89b1-6a0b12d34e56"
+      responses:
+        '200':
+          description: Chi tiết chuyến xe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideDetailResponse'
+        '404':
+          description: Không tìm thấy mã cuốc xe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_code: "RIDE_NOT_FOUND"
+                message: "Không tìm thấy chuyến xe tương ứng."
+                timestamp: "2026-09-07T18:45:00Z"
+
+  /rides/{rideId}/cancel:
+    post:
+      tags:
+        - Ride Booking & Estimation
+      summary: Hủy yêu cầu chuyến xe & Áp dụng phí phạt hủy (UC05 / FR15 / RULE-04 / ASM-04)
+      description: |
+        - Hủy khi trạng thái `MATCHING`: **Miễn phí**
+        - Hủy trong vòng $\le 2$ phút sau khi tài xế nhận (`ACCEPTED`): **Miễn phí**
+        - Hủy sau 2 phút kể từ khi tài xế nhận: **Phạt 10.000 VNĐ** (`CANCELLED_WITH_FEE`)
+      operationId: cancelRide
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  example: "Thay đổi kế hoạch di chuyển"
+      responses:
+        '200':
+          description: Hủy chuyến xe thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ride_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [CANCELLED_BY_PASSENGER, CANCELLED_WITH_FEE]
+                    example: "CANCELLED_WITH_FEE"
+                  cancellation_fee:
+                    type: number
+                    example: 10000
+                  message:
+                    type: string
+                    example: "Chuyến xe đã hủy. Áp dụng phí phạt 10.000 VNĐ do hủy quá 2 phút."
+
+  /rides/history:
+    get:
+      tags:
+        - Trip Lifecycle & Tracking
+      summary: Tra cứu lịch sử chuyến đi phân trang (UC09 / FR18)
+      operationId: getRideHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+          example: 10
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [COMPLETED, CANCELLED_BY_PASSENGER, CANCELLED_WITH_FEE, CANCELLED_NO_DRIVER]
+      responses:
+        '200':
+          description: Danh sách chuyến đi trong lịch sử
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RideDetailResponse'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /drivers/status:
+    put:
+      tags:
+        - Driver Dispatch Operations
+      summary: Bật/Tắt trạng thái hoạt động của Tài xế (UC11 / FR08)
+      description: Chuyển đổi giữa `ONLINE` (Sẵn sàng nhận cuốc) và `OFFLINE` (Nghỉ ngơi).
+      operationId: updateDriverStatus
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [ONLINE, OFFLINE]
+                  example: "ONLINE"
+      responses:
+        '200':
+          description: Cập nhật trạng thái làm việc thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  driver_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [ONLINE, OFFLINE]
+                    example: "ONLINE"
+                  updated_at:
+                    type: string
+                    format: date-time
+
+  /drivers/location:
+    post:
+      tags:
+        - Driver Dispatch Operations
+      summary: Cập nhật tọa độ GPS định kỳ vào Redis Geospatial (FR09 / ASM-06)
+      description: |
+        Tài xế gửi tọa độ GPS định kỳ (mỗi 5-10s) lên server để duy trì vị trí tìm kiếm xe gần nhất.
+        Hỗ trợ gửi mảng nhiều điểm (tối đa 50 điểm) khi thiết bị vừa khôi phục mạng 4G sau khi mất sóng.
+      operationId: updateDriverLocation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverLocationBatchRequest'
+      responses:
+        '200':
+          description: Ghi nhận vị trí GPS thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  synced_points:
+                    type: integer
+                    example: 1
+
+  /rides/{rideId}/accept:
+    post:
+      tags:
+        - Driver Dispatch Operations
+      summary: Tài xế chấp nhận lời mời chuyến xe (UC12 / FR12 / RULE-02 / ASM-03)
+      description: |
+        Tài xế bấm nhận chuyến trong thời gian đếm ngược $\le 20$ giây.
+        Trạng thái chuyển sang `ACCEPTED`, khóa tài xế và gửi Push báo cho Khách hàng.
+      operationId: acceptRideOffer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Nhận chuyến thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideDetailResponse'
+        '408':
+          description: Đã hết thời gian 20s tiếp nhận, cuốc đã được chuyển cho tài xế khác
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_code: "OFFER_TIMEOUT"
+                message: "Thời gian tiếp nhận đã hết. Chuyến xe đã được chuyển sang tài xế khác."
+                timestamp: "2026-09-07T18:45:00Z"
+
+  /rides/{rideId}/reject:
+    post:
+      tags:
+        - Driver Dispatch Operations
+      summary: Tài xế từ chối lời mời chuyến xe (UC13 / FR12 / FR13 / RULE-03 / EX02)
+      description: Thu hồi lời mời ngay lập tức và chuyển tiếp cuốc xe cho tài xế phù hợp kế tiếp.
+      operationId: rejectRideOffer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: "Kẹt xe không thể đón kịp"
+      responses:
+        '200':
+          description: Từ chối chuyến thành công, chuyển sang tài xế kế tiếp
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Đã từ chối chuyến. Hệ thống tiếp tục điều phối."
+
+  /rides/{rideId}/status:
+    put:
+      tags:
+        - Trip Lifecycle & Tracking
+      summary: Cập nhật tiến trình vòng đời chuyến đi (UC14 / FR16 / FR19)
+      description: |
+        Tài xế cập nhật trạng thái di chuyển theo thứ tự State Machine:
+        1. `DRIVER_ARRIVED`: Tài xế đã đến điểm đón (GPS $\le 50$m).
+        2. `IN_TRANSIT`: Khách đã lên xe an toàn, bắt đầu di chuyển.
+        3. `COMPLETED`: Đến điểm trả, khóa tọa độ và chuyển sang trạng thái chờ thanh toán `PAYMENT_PENDING`.
+      operationId: updateTripStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRideStatusRequest'
+      responses:
+        '200':
+          description: Cập nhật trạng thái chuyến đi thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideDetailResponse'
+        '400':
+          description: Chuyển đổi trạng thái sai quy trình State Machine
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_code: "INVALID_STATE_TRANSITION"
+                message: "Không thể chuyển trạng thái từ ACCEPTED sang COMPLETED mà chưa qua IN_TRANSIT."
+                timestamp: "2026-09-07T18:45:00Z"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LocationPoint:
+      type: object
+      required:
+        - latitude
+        - longitude
+        - address
+      properties:
+        latitude:
+          type: number
+          format: double
+          example: 10.7769
+        longitude:
+          type: number
+          format: double
+          example: 106.7009
+        address:
+          type: string
+          example: "Chợ Bến Thành, Quận 1, TP.HCM"
+
+    RideEstimateRequest:
+      type: object
+      required:
+        - pickup_location
+        - dropoff_location
+        - vehicle_type
+      properties:
+        pickup_location:
+          $ref: '#/components/schemas/LocationPoint'
+        dropoff_location:
+          $ref: '#/components/schemas/LocationPoint'
+        vehicle_type:
+          type: string
+          enum: [BIKE, CAR_4, CAR_7]
+          example: "CAR_4"
+
+    RideEstimateResponse:
+      type: object
+      properties:
+        distance_km:
+          type: number
+          format: float
+          example: 7.2
+        duration_minutes:
+          type: integer
+          example: 22
+        estimate_fare:
+          type: number
+          example: 85000
+        currency:
+          type: string
+          example: "VND"
+        surge_multiplier:
+          type: number
+          format: float
+          example: 1.0
+        vehicle_type:
+          type: string
+          example: "CAR_4"
+        route_polyline:
+          type: string
+          example: "a~l~Fjk~uOn}@rI..."
+
+    CreateRideRequest:
+      type: object
+      required:
+        - pickup_location
+        - dropoff_location
+        - vehicle_type
+        - payment_method
+      properties:
+        pickup_location:
+          $ref: '#/components/schemas/LocationPoint'
+        dropoff_location:
+          $ref: '#/components/schemas/LocationPoint'
+        vehicle_type:
+          type: string
+          enum: [BIKE, CAR_4, CAR_7]
+          example: "CAR_4"
+        payment_method:
+          type: string
+          enum: [CASH, DIGITAL_WALLET, CREDIT_CARD]
+          example: "CASH"
+        note_to_driver:
+          type: string
+          example: "Vui lòng đón ở cổng số 2"
+
+    RideDetailResponse:
+      type: object
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+          example: "e3a89c91-9e20-4e55-89b1-6a0b12d34e56"
+        customer_id:
+          type: string
+          format: uuid
+          example: "b1f8c14e-6e27-4a11-89be-0d6d5a1b32d1"
+        driver_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "c4b1234e-6e27-4a11-89be-0d6d5a1b32d2"
+        status:
+          $ref: '#/components/schemas/RideStatusEnum'
+        vehicle_type:
+          type: string
+          example: "CAR_4"
+        pickup_location:
+          $ref: '#/components/schemas/LocationPoint'
+        dropoff_location:
+          $ref: '#/components/schemas/LocationPoint'
+        estimate_fare:
+          type: number
+          example: 85000
+        final_fare:
+          type: number
+          nullable: true
+          example: 88000
+        payment_method:
+          type: string
+          example: "CASH"
+        payment_status:
+          type: string
+          enum: [UNPAID, PAID, FAILED]
+          example: "UNPAID"
+        driver_current_location:
+          type: object
+          properties:
+            latitude:
+              type: number
+            longitude:
+              type: number
+        created_at:
+          type: string
+          format: date-time
+        matched_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    RideStatusEnum:
+      type: string
+      description: Vòng đời trạng thái cuốc xe theo State Machine
+      enum:
+        - MATCHING
+        - ACCEPTED
+        - DRIVER_ARRIVED
+        - IN_TRANSIT
+        - PAYMENT_PENDING
+        - COMPLETED
+        - CANCELLED_BY_PASSENGER
+        - CANCELLED_WITH_FEE
+        - CANCELLED_NO_DRIVER
+        - CANCELLED_BY_DRIVER
+      example: "MATCHING"
+
+    DriverLocationBatchRequest:
+      type: object
+      required:
+        - locations
+      properties:
+        locations:
+          type: array
+          maxItems: 50
+          items:
+            type: object
+            required:
+              - latitude
+              - longitude
+              - timestamp
+            properties:
+              latitude:
+                type: number
+                format: double
+                example: 10.7769
+              longitude:
+                type: number
+                format: double
+                example: 106.7009
+              bearing:
+                type: number
+                format: float
+                example: 180.5
+              speed:
+                type: number
+                format: float
+                example: 35.2
+              timestamp:
+                type: string
+                format: date-time
+                example: "2026-09-07T18:45:00Z"
+
+    UpdateRideStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [DRIVER_ARRIVED, IN_TRANSIT, COMPLETED]
+          example: "DRIVER_ARRIVED"
+        current_latitude:
+          type: number
+          format: double
+          example: 10.7768
+        current_longitude:
+          type: number
+          format: double
+          example: 106.7008
+        actual_distance_km:
+          type: number
+          description: Quãng đường GPS thực tế ghi nhận khi bấm COMPLETED
+          example: 7.4
+        actual_duration_minutes:
+          type: integer
+          description: Thời gian di chuyển thực tế khi bấm COMPLETED
+          example: 24
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 10
+        total_items:
+          type: integer
+          example: 45
+        total_pages:
+          type: integer
+          example: 5
+
+    ErrorResponse:
+      type: object
+      required:
+        - error_code
+        - message
+        - timestamp
+      properties:
+        error_code:
+          type: string
+          example: "ERROR_CODE"
+        message:
+          type: string
+          example: "Thông báo lỗi chi tiết"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-09-07T18:45:00Z"
+
+  responses:
+    BadRequestError:
+      description: Lỗi tham số yêu cầu
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnauthorizedError:
+      description: Lỗi chưa xác thực
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -1,0 +1,225 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Notification Microservice API
+  description: |
+    ### Phân hệ 4: Quản lý Thông báo (Notification Service)
+    - **Đề tài**: Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh (CAB System)
+    - **Tác giả**: Nguyễn Hữu Lộc - MSSV: 23635401
+    - **Yêu cầu chức năng**: `FR23` (SMS OTP), `FR24` (Real-time Push Notifications)
+    - **Kiến trúc kỹ thuật**: Background Worker tiêu thụ Event từ Message Queue (RabbitMQ / Redis Pub/Sub) để điều phối gửi thông báo qua Firebase Cloud Messaging (FCM) và Cổng SMS.
+  version: 1.0.0-mvp
+  contact:
+    name: Nguyễn Hữu Lộc
+    email: 23635401@student.edu.vn
+
+servers:
+  - url: http://localhost:8084/api/v1
+    description: Local Notification Service
+  - url: https://api.cabsystem.vn/api/v1
+    description: API Gateway (Production)
+
+tags:
+  - name: User Notifications
+    description: Xem danh sách và quản lý trạng thái đọc thông báo
+  - name: Internal Dispatcher
+    description: Các endpoint nội bộ để các microservice khác kích hoạt gửi thông báo
+
+paths:
+  /notifications:
+    get:
+      tags:
+        - User Notifications
+      summary: Lấy danh sách thông báo của người dùng (FR24)
+      operationId: getUserNotifications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: is_read
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Danh sách thông báo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unread_count:
+                    type: integer
+                    example: 3
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationItem'
+
+  /notifications/{notificationId}/read:
+    put:
+      tags:
+        - User Notifications
+      summary: Đánh dấu thông báo đã đọc
+      operationId: markNotificationAsRead
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Đã đánh dấu đọc thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+  /notifications/send-push:
+    post:
+      tags:
+        - Internal Dispatcher
+      summary: Kích hoạt gửi Push Notification (Nội bộ Service / Event) (FR24)
+      description: "Gửi thông báo sự kiện: DRIVER_FOUND, DRIVER_ARRIVED, TRIP_COMPLETED, PAYMENT_SUCCESS."
+      operationId: triggerPushNotification
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipient_user_id
+                - title
+                - body
+                - event_type
+              properties:
+                recipient_user_id:
+                  type: string
+                  format: uuid
+                  example: "b1f8c14e-6e27-4a11-89be-0d6d5a1b32d1"
+                title:
+                  type: string
+                  example: "Tài xế đã đến điểm đón!"
+                body:
+                  type: string
+                  example: "Tài xế Trần Văn B cùng xe 51K-123.45 đã đến điểm hẹn."
+                event_type:
+                  type: string
+                  enum: [DRIVER_FOUND, DRIVER_ARRIVED, TRIP_COMPLETED, PAYMENT_SUCCESS, RIDE_CANCELLED]
+                  example: "DRIVER_ARRIVED"
+                payload_data:
+                  type: object
+                  example:
+                    ride_id: "e3a89c91-9e20-4e55-89b1-6a0b12d34e56"
+      responses:
+        '200':
+          description: Gửi thông báo thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message_id:
+                    type: string
+                    example: "fcm_msg_881923"
+
+  /notifications/send-otp:
+    post:
+      tags:
+        - Internal Dispatcher
+      summary: Kích hoạt gửi SMS chứa mã xác thực OTP (FR23)
+      operationId: triggerSmsOtp
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone_number
+                - otp_code
+                - purpose
+              properties:
+                phone_number:
+                  type: string
+                  example: "0901234567"
+                otp_code:
+                  type: string
+                  example: "839201"
+                purpose:
+                  type: string
+                  enum: [REGISTRATION, PASSWORD_RESET]
+                  example: "REGISTRATION"
+      responses:
+        '200':
+          description: SMS OTP đã gửi thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  sms_tracking_id:
+                    type: string
+                    example: "sms_vn_992014"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    NotificationItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "72a19b88-1234-4b5c-9821-ab9812736123"
+        title:
+          type: string
+          example: "Tài xế đã đến điểm đón!"
+        body:
+          type: string
+          example: "Tài xế Trần Văn B cùng xe 51K-123.45 đã đến điểm hẹn."
+        event_type:
+          type: string
+          example: "DRIVER_ARRIVED"
+        is_read:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-09-07T18:45:00Z"

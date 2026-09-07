@@ -1,0 +1,122 @@
+version: '3.8'
+
+# ==============================================================================
+# CAB SYSTEM - DOCKER COMPOSE CONFIGURATION
+# Đề tài: Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh (CAB System)
+# Tác giả: Nguyễn Hữu Lộc - MSSV: 23635401
+# ==============================================================================
+# Hướng dẫn chạy:
+# 1. Chỉ chạy xem API Document (Swagger UI & Editor):
+#    docker compose up -d swagger-ui swagger-editor
+#
+# 2. Khởi động toàn bộ hệ sinh thái (Swagger + Postgres + Redis + RabbitMQ):
+#    docker compose up -d
+#
+# 3. Dừng các dịch vụ:
+#    docker compose down
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. SWAGGER UI: Giao diện trực quan xem & gọi thử các file API trong api-document
+  # Truy cập: http://localhost:8080
+  # Có sẵn Menu Dropdown chuyển đổi giữa Master Spec và 5 Microservices
+  # ----------------------------------------------------------------------------
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: cab-swagger-ui
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./api-document:/usr/share/nginx/html/api-document:ro
+    environment:
+      URLS_PRIMARY_NAME: "00. Master Spec (Toàn hệ thống)"
+      URLS: >-
+        [
+          {"url": "/api-document/openapi.yaml", "name": "00. Master Spec (Toàn hệ thống)"},
+          {"url": "/api-document/auth-service.yaml", "name": "01. Auth & User Service"},
+          {"url": "/api-document/ride-service.yaml", "name": "02. Ride & Dispatch Service"},
+          {"url": "/api-document/payment-service.yaml", "name": "03. Fare & Payment Service"},
+          {"url": "/api-document/notification-service.yaml", "name": "04. Notification Service"},
+          {"url": "/api-document/admin-service.yaml", "name": "05. Admin & Analytics Service"}
+        ]
+    restart: unless-stopped
+    networks:
+      - cab-network
+
+  # ----------------------------------------------------------------------------
+  # 2. SWAGGER EDITOR: Soạn thảo và chỉnh sửa đặc tả API (theo bài viết 200Lab)
+  # Truy cập: http://localhost:8081
+  # ----------------------------------------------------------------------------
+  swagger-editor:
+    image: swaggerapi/swagger-editor:latest
+    container_name: cab-swagger-editor
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+    networks:
+      - cab-network
+
+  # ----------------------------------------------------------------------------
+  # 3. POSTGRESQL: Cơ sở dữ liệu chính (UserDB, RideDB, PaymentDB, AdminDB)
+  # Port: 5432
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: cab-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: cab_admin
+      POSTGRES_PASSWORD: cab_password_2026
+      POSTGRES_DB: cab_system_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - cab-network
+
+  # ----------------------------------------------------------------------------
+  # 4. REDIS: Bộ nhớ đệm định vị GPS (Redis Geospatial) & Quét tài xế gần nhất
+  # Port: 6379
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: cab-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - cab-network
+
+  # ----------------------------------------------------------------------------
+  # 5. RABBITMQ: Message Broker xử lý sự kiện bất đồng bộ cho Notification Service
+  # Port: 5672 (AMQP Protocol), 15672 (Management Dashboard Web)
+  # Truy cập Dashboard: http://localhost:15672 (User: cab_guest / Pass: cab_guest_password)
+  # ----------------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: cab-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: cab_guest
+      RABBITMQ_DEFAULT_PASS: cab_guest_password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    networks:
+      - cab-network
+
+networks:
+  cab-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

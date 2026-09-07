@@ -1,0 +1,1145 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Smart Ride-Hailing & Dispatching Platform API (Toàn diện)
+  description: |
+    # TÀI LIỆU ĐẶC TẢ API CHUẨN OPENAPI 3.0 (SWAGGER) - CAB SYSTEM
+    
+    Tài liệu đặc tả toàn diện hệ thống **CAB System** (Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh), được xây dựng dựa trên:
+    - **Tài liệu phân tích SRS**: [23635401_NguyenHuuLoc_CabSys.md](file:///t:/New%20folder/23635401_NguyenHuuLoc_CabSystem/23635401_NguyenHuuLoc_CabSys.md)
+    - **Học viên thực hiện**: Nguyễn Hữu Lộc (MSSV: 23635401)
+    - **Chuẩn tài liệu**: OpenAPI Specification v3.0.3 theo hướng dẫn chuẩn hóa từ 200Lab Blog.
+    
+    ---
+    ### 5 Microservices được ánh xạ trong hệ thống:
+    1. **Auth & User Service**: Đăng ký, đăng nhập JWT, SMS OTP, quản lý hồ sơ và xe đối tác tài xế.
+    2. **Ride & Dispatch Service (Core Engine)**: Tính cước ước tính, đặt xe, máy trạng thái chuyến đi (`MATCHING` -> `ACCEPTED` -> `DRIVER_ARRIVED` -> `IN_TRANSIT` -> `PAYMENT_PENDING` -> `COMPLETED`), thuật toán quét tài xế gần nhất qua Redis Geospatial và cập nhật tọa độ GPS thời gian thực.
+    3. **Fare & Payment Service**: Chốt cước thực tế, tích hợp cổng thanh toán qua Tokenization (PCI-DSS), cơ chế Fallback sang tiền mặt khi lỗi giao dịch (`RULE-06`).
+    4. **Notification Service**: Thông báo đẩy (Push) và tin nhắn SMS OTP.
+    5. **Admin & Analytics Service**: Giám sát bản đồ trực tiếp (Live Monitor), can thiệp xử lý sự cố có lưu nhật ký kiểm toán bắt buộc (`audit_logs`), phê duyệt tài xế và báo cáo thống kê KPI.
+  version: 1.0.0-mvp
+  contact:
+    name: Nguyễn Hữu Lộc
+    email: 23635401@student.edu.vn
+
+servers:
+  - url: https://api.cabsystem.vn/api/v1
+    description: API Gateway Production
+  - url: https://staging-api.cabsystem.vn/api/v1
+    description: Sandbox / Staging Environment
+  - url: http://localhost:8080/api/v1
+    description: Local Development Gateway
+
+tags:
+  - name: 01. Authentication & Users
+    description: Đăng ký, SMS OTP, Đăng nhập JWT, Hồ sơ cá nhân (UC01, UC02, UC03)
+  - name: 02. Driver & Vehicle Profile
+    description: Đăng ký phương tiện, Bật/Tắt Online, Gửi tọa độ GPS (UC10, UC11)
+  - name: 03. Ride Booking & Estimation
+    description: Báo giá ước tính, Đặt xe, Hủy chuyến xe (UC04, UC05)
+  - name: 04. Ride Lifecycle & Tracking
+    description: Tiếp nhận, từ chối, cập nhật lộ trình chuyến đi (UC06, UC09, UC12, UC13, UC14)
+  - name: 05. Payments & Invoices
+    description: Chốt cước, thanh toán tiền mặt/thẻ số, xử lý Fallback, hóa đơn (UC07)
+  - name: 06. Notifications
+    description: Quản lý thông báo người dùng và sự kiện hệ thống
+  - name: 07. Reviews & Ratings
+    description: Khách hàng chấm điểm và đánh giá dịch vụ tài xế (UC08)
+  - name: 08. Admin & Operations
+    description: Khóa/Mở tài khoản, duyệt tài xế, Live Monitor bản đồ, can thiệp sự cố (UC15, UC16)
+  - name: 09. Analytics & KPI Reports
+    description: Báo cáo doanh thu, tỷ lệ hoàn thành, hiệu suất tài xế, Audit Logs (UC17)
+
+paths:
+  # ========================================================
+  # 1. AUTH & USER SERVICE
+  # ========================================================
+  /auth/register:
+    post:
+      tags:
+        - 01. Authentication & Users
+      summary: Đăng ký tài khoản khách hàng mới (UC01 / FR01 / FR23)
+      operationId: registerCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Đăng ký thành công, mã OTP đã gửi qua SMS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '409':
+          description: Số điện thoại đã được sử dụng
+
+  /auth/verify-otp:
+    post:
+      tags:
+        - 01. Authentication & Users
+      summary: Xác thực mã SMS OTP kích hoạt tài khoản (UC01 / FR01)
+      operationId: verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone_number, otp_code]
+              properties:
+                phone_number:
+                  type: string
+                  example: "0901234567"
+                otp_code:
+                  type: string
+                  example: "839201"
+      responses:
+        '200':
+          description: Kích hoạt thành công, trả về JWT Token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '400':
+          description: Mã OTP sai hoặc hết hạn 120s
+
+  /auth/login:
+    post:
+      tags:
+        - 01. Authentication & Users
+      summary: Đăng nhập hệ thống đa vai trò (UC02 / FR02 / FR03)
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Đăng nhập thành công, trả về Access/Refresh Token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '401':
+          description: Sai mật khẩu hoặc số điện thoại
+        '403':
+          description: Tài khoản đang bị khóa (LOCKED)
+
+  /auth/refresh-token:
+    post:
+      tags:
+        - 01. Authentication & Users
+      summary: Làm mới JWT Access Token (FR02)
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token mới được cấp phát thành công
+
+  /users/profile:
+    get:
+      tags:
+        - 01. Authentication & Users
+      summary: Xem thông tin cá nhân (UC03 / FR04)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+    put:
+      tags:
+        - 01. Authentication & Users
+      summary: Cập nhật thông tin cá nhân (UC03 / FR04)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+
+  # ========================================================
+  # 2. DRIVER & VEHICLE PROFILE
+  # ========================================================
+  /drivers/vehicle:
+    post:
+      tags:
+        - 02. Driver & Vehicle Profile
+      summary: Đăng ký GPLX và phương tiện (UC10 / FR05)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverVehicleRegistrationRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+    get:
+      tags:
+        - 02. Driver & Vehicle Profile
+      summary: Tra cứu thông tin xe & trạng thái duyệt (UC10)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+
+  /drivers/status:
+    put:
+      tags:
+        - 02. Driver & Vehicle Profile
+      summary: Tài xế Bật / Tắt trạng thái Online / Offline (UC11 / FR08)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [ONLINE, OFFLINE]
+      responses:
+        '200':
+          description: Đã chuyển đổi trạng thái
+
+  /drivers/location:
+    post:
+      tags:
+        - 02. Driver & Vehicle Profile
+      summary: Cập nhật tọa độ GPS vào Redis Geospatial (FR09 / ASM-06)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverLocationBatchRequest'
+      responses:
+        '200':
+          description: Vị trí GPS đã được ghi nhận vào cache Redis
+
+  # ========================================================
+  # 3. RIDE BOOKING & ESTIMATION
+  # ========================================================
+  /rides/estimate:
+    post:
+      tags:
+        - 03. Ride Booking & Estimation
+      summary: Tính cước ước tính & lộ trình (FR07 / ASM-01)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RideEstimateRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideEstimateResponse'
+
+  /rides:
+    post:
+      tags:
+        - 03. Ride Booking & Estimation
+      summary: Tạo yêu cầu đặt xe mới (UC04 / FR06 / FR10 / RULE-01)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRideRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideDetailResponse'
+
+  /rides/{rideId}/cancel:
+    post:
+      tags:
+        - 03. Ride Booking & Estimation
+      summary: Khách hủy chuyến xe & Phí phạt nếu hủy sau 2 phút (UC05 / FR15 / RULE-04 / ASM-04)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: "Đổi ý, không muốn đi nữa"
+      responses:
+        '200':
+          description: Chuyến xe đã hủy (có thể áp dụng phạt 10.000 VNĐ)
+
+  # ========================================================
+  # 4. RIDE LIFECYCLE & TRACKING
+  # ========================================================
+  /rides/{rideId}:
+    get:
+      tags:
+        - 04. Ride Lifecycle & Tracking
+      summary: Lấy chi tiết chuyến xe và vị trí tài xế thời gian thực (UC06 / FR17)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideDetailResponse'
+
+  /rides/{rideId}/accept:
+    post:
+      tags:
+        - 04. Ride Lifecycle & Tracking
+      summary: Tài xế nhận cuốc trong 20 giây (UC12 / FR12 / RULE-02 / ASM-03)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Nhận chuyến thành công
+        '408':
+          description: Hết hạn 20s phản hồi
+
+  /rides/{rideId}/reject:
+    post:
+      tags:
+        - 04. Ride Lifecycle & Tracking
+      summary: Tài xế từ chối cuốc xe (UC13 / FR12 / FR13 / RULE-03 / EX02)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Từ chối thành công, hệ thống chuyển tiếp tài xế khác
+
+  /rides/{rideId}/status:
+    put:
+      tags:
+        - 04. Ride Lifecycle & Tracking
+      summary: Cập nhật trạng thái vòng đời cuốc xe (UC14 / FR16 / FR19)
+      description: Chuyển đổi trạng thái `DRIVER_ARRIVED` -> `IN_TRANSIT` -> `COMPLETED` (chuyển sang `PAYMENT_PENDING`).
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRideStatusRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideDetailResponse'
+
+  /rides/history:
+    get:
+      tags:
+        - 04. Ride Lifecycle & Tracking
+      summary: Xem lịch sử chuyến đi phân trang (UC09 / FR18)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Danh sách lịch sử cuốc xe
+
+  # ========================================================
+  # 5. PAYMENTS & INVOICES
+  # ========================================================
+  /payments/process:
+    post:
+      tags:
+        - 05. Payments & Invoices
+      summary: Thanh toán cước thực tế (UC07 / FR19 / FR20 / FR21 / RULE-04 / RULE-05)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessPaymentRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentTransactionResponse'
+        '402':
+          description: Trừ tiền thẻ thất bại, chuyển hướng sang Fallback
+
+  /payments/{paymentId}/fallback-cash:
+    post:
+      tags:
+        - 05. Payments & Invoices
+      summary: Chuyển sang thu Tiền mặt khi thanh toán thẻ lỗi (FR22 / RULE-06 / EX05 / EX06)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: "Thẻ ngân hàng không đủ số dư"
+      responses:
+        '200':
+          description: Đã chuyển sang thu tiền mặt
+
+  /payments/{paymentId}/confirm-cash:
+    post:
+      tags:
+        - 05. Payments & Invoices
+      summary: Tài xế xác nhận đã nhận tiền mặt từ khách (UC07 / FR20)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount_received]
+              properties:
+                amount_received:
+                  type: number
+                  example: 88000
+      responses:
+        '200':
+          description: Cuốc xe hoàn tất 100%
+
+  /payments/webhook:
+    post:
+      tags:
+        - 05. Payments & Invoices
+      summary: Webhook nhận kết quả từ Cổng thanh toán bên ngoài (FR21 / RULE-05)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transaction_id, status, signature]
+              properties:
+                transaction_id:
+                  type: string
+                status:
+                  type: string
+                  enum: [SUCCESS, FAILED]
+                amount:
+                  type: number
+                signature:
+                  type: string
+      responses:
+        '200':
+          description: Tiếp nhận thành công
+
+  /payments/{paymentId}:
+    get:
+      tags:
+        - 05. Payments & Invoices
+      summary: Xem hóa đơn chi tiết cuốc xe (UC07)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentInvoiceResponse'
+
+  # ========================================================
+  # 6. NOTIFICATIONS
+  # ========================================================
+  /notifications:
+    get:
+      tags:
+        - 06. Notifications
+      summary: Xem danh sách thông báo đẩy của người dùng (FR24)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Danh sách thông báo
+  /notifications/{notificationId}/read:
+    put:
+      tags:
+        - 06. Notifications
+      summary: Đánh dấu thông báo đã đọc
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Thành công
+
+  # ========================================================
+  # 7. REVIEWS & RATINGS
+  # ========================================================
+  /reviews:
+    post:
+      tags:
+        - 07. Reviews & Ratings
+      summary: Khách hàng chấm điểm 1-5 sao và nhận xét tài xế (UC08 / FR25)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitReviewRequest'
+      responses:
+        '201':
+          description: Gửi đánh giá thành công
+
+  # ========================================================
+  # 8. ADMIN & OPERATIONS
+  # ========================================================
+  /admin/users:
+    get:
+      tags:
+        - 08. Admin & Operations
+      summary: Quản trị viên xem & tìm kiếm người dùng (UC15 / FR26)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [CUSTOMER, DRIVER, OPERATOR]
+      responses:
+        '200':
+          description: Danh sách người dùng
+  /admin/users/{userId}/status:
+    put:
+      tags:
+        - 08. Admin & Operations
+      summary: Khóa hoặc Mở khóa tài khoản (UC15 / FR26 / RULE-07)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, reason]
+              properties:
+                status:
+                  type: string
+                  enum: [ACTIVE, SUSPENDED]
+                reason:
+                  type: string
+                  example: "Vi phạm quy định hủy chuyến bất thường nhiều lần"
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /admin/drivers/{driverId}/vehicles/{vehicleId}/approval:
+    put:
+      tags:
+        - 08. Admin & Operations
+      summary: Phê duyệt / Từ chối xe đối tác tài xế (UC15 / FR27 / RULE-07)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision:
+                  type: string
+                  enum: [APPROVED, REJECTED]
+                rejection_reason:
+                  type: string
+      responses:
+        '200':
+          description: Đã duyệt hồ sơ xe
+
+  /admin/rides/live-monitor:
+    get:
+      tags:
+        - 08. Admin & Operations
+      summary: Giám sát các cuốc xe đang hoạt động trực tiếp trên bản đồ (UC16 / FR28)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Danh sách cuốc xe đang hoạt động
+
+  /admin/rides/{rideId}/intervention:
+    post:
+      tags:
+        - 08. Admin & Operations
+      summary: Can thiệp cưỡng chế cuốc xe gặp sự cố & Ghi Audit Log (UC16 / FR29 / FR30 / RULE-07 / EX08)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, reason]
+              properties:
+                action:
+                  type: string
+                  enum: [FORCE_CANCEL, FORCE_COMPLETE, RE_DISPATCH]
+                reason:
+                  type: string
+                  example: "Tài xế hỏng xe trên cầu, hỗ trợ hủy cuốc cho khách"
+      responses:
+        '200':
+          description: Can thiệp thành công, đã lưu audit log
+
+  # ========================================================
+  # 9. ANALYTICS & AUDIT LOGS
+  # ========================================================
+  /admin/audit-logs:
+    get:
+      tags:
+        - 09. Analytics & KPI Reports
+      summary: Tra cứu nhật ký kiểm toán hành vi quản trị viên (FR30 / RULE-07)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Danh sách Audit Logs chỉ đọc
+
+  /admin/analytics/overview:
+    get:
+      tags:
+        - 09. Analytics & KPI Reports
+      summary: Báo cáo chỉ số KPI tổng quan doanh thu & chuyến xe (UC17 / FR31)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dữ liệu KPI doanh thu, tỷ lệ hoàn thành, tỷ lệ hủy
+
+  /admin/analytics/driver-performance:
+    get:
+      tags:
+        - 09. Analytics & KPI Reports
+      summary: Báo cáo hiệu suất và sao đánh giá của tài xế (UC17 / FR32)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Danh sách xếp hạng tài xế
+
+# ========================================================
+# COMPONENTS & SCHEMAS
+# ========================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Nhập token với tiền tố Bearer: Bearer <access_token>"
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [phone_number, full_name, password, confirm_password]
+      properties:
+        phone_number:
+          type: string
+          example: "0901234567"
+        full_name:
+          type: string
+          example: "Nguyễn Văn A"
+        email:
+          type: string
+          example: "nguyenvana@gmail.com"
+        password:
+          type: string
+          example: "SecurePass123@"
+        confirm_password:
+          type: string
+          example: "SecurePass123@"
+
+    RegisterResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Mã OTP xác thực đã được gửi qua tin nhắn SMS."
+        user_id:
+          type: string
+          format: uuid
+        otp_expires_in_seconds:
+          type: integer
+          example: 120
+
+    LoginRequest:
+      type: object
+      required: [phone_number, password]
+      properties:
+        phone_number:
+          type: string
+          example: "0901234567"
+        password:
+          type: string
+          example: "SecurePass123@"
+
+    AuthSuccessResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: "Bearer"
+        expires_in_seconds:
+          type: integer
+          example: 900
+        user:
+          $ref: '#/components/schemas/UserProfileResponse'
+
+    UserProfileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        phone_number:
+          type: string
+          example: "0901234567"
+        full_name:
+          type: string
+          example: "Nguyễn Văn A"
+        email:
+          type: string
+          example: "nguyenvana@gmail.com"
+        avatar_url:
+          type: string
+          example: "https://cdn.cabsystem.vn/avatars/user_01.jpg"
+        role:
+          type: string
+          enum: [CUSTOMER, DRIVER, OPERATOR, ADMIN]
+          example: "CUSTOMER"
+        status:
+          type: string
+          example: "ACTIVE"
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          example: "Nguyễn Văn A (Cập nhật)"
+        email:
+          type: string
+          example: "nguyenvana.updated@gmail.com"
+        avatar_url:
+          type: string
+          example: "https://cdn.cabsystem.vn/avatars/new.jpg"
+
+    DriverVehicleRegistrationRequest:
+      type: object
+      required: [license_number, vehicle_type, license_plate, brand, model]
+      properties:
+        license_number:
+          type: string
+          example: "790123456789"
+        vehicle_type:
+          type: string
+          enum: [BIKE, CAR_4, CAR_7]
+          example: "CAR_4"
+        license_plate:
+          type: string
+          example: "51K-123.45"
+        brand:
+          type: string
+          example: "Toyota"
+        model:
+          type: string
+          example: "Vios 2023"
+
+    VehicleResponse:
+      type: object
+      properties:
+        vehicle_id:
+          type: string
+          format: uuid
+        license_plate:
+          type: string
+          example: "51K-123.45"
+        approval_status:
+          type: string
+          enum: [PENDING_APPROVAL, APPROVED, REJECTED]
+          example: "PENDING_APPROVAL"
+
+    LocationPoint:
+      type: object
+      required: [latitude, longitude, address]
+      properties:
+        latitude:
+          type: number
+          example: 10.7769
+        longitude:
+          type: number
+          example: 106.7009
+        address:
+          type: string
+          example: "Chợ Bến Thành, Quận 1"
+
+    RideEstimateRequest:
+      type: object
+      required: [pickup_location, dropoff_location, vehicle_type]
+      properties:
+        pickup_location:
+          $ref: '#/components/schemas/LocationPoint'
+        dropoff_location:
+          $ref: '#/components/schemas/LocationPoint'
+        vehicle_type:
+          type: string
+          enum: [BIKE, CAR_4, CAR_7]
+          example: "CAR_4"
+
+    RideEstimateResponse:
+      type: object
+      properties:
+        distance_km:
+          type: number
+          example: 7.2
+        duration_minutes:
+          type: integer
+          example: 22
+        estimate_fare:
+          type: number
+          example: 85000
+        currency:
+          type: string
+          example: "VND"
+        surge_multiplier:
+          type: number
+          example: 1.0
+
+    CreateRideRequest:
+      type: object
+      required: [pickup_location, dropoff_location, vehicle_type, payment_method]
+      properties:
+        pickup_location:
+          $ref: '#/components/schemas/LocationPoint'
+        dropoff_location:
+          $ref: '#/components/schemas/LocationPoint'
+        vehicle_type:
+          type: string
+          enum: [BIKE, CAR_4, CAR_7]
+        payment_method:
+          type: string
+          enum: [CASH, DIGITAL_WALLET, CREDIT_CARD]
+          example: "CASH"
+
+    RideDetailResponse:
+      type: object
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [MATCHING, ACCEPTED, DRIVER_ARRIVED, IN_TRANSIT, PAYMENT_PENDING, COMPLETED, CANCELLED_BY_PASSENGER, CANCELLED_WITH_FEE, CANCELLED_NO_DRIVER]
+          example: "MATCHING"
+        estimate_fare:
+          type: number
+          example: 85000
+        final_fare:
+          type: number
+          nullable: true
+          example: 88000
+        pickup_location:
+          $ref: '#/components/schemas/LocationPoint'
+        dropoff_location:
+          $ref: '#/components/schemas/LocationPoint'
+
+    DriverLocationBatchRequest:
+      type: object
+      required: [locations]
+      properties:
+        locations:
+          type: array
+          items:
+            type: object
+            required: [latitude, longitude, timestamp]
+            properties:
+              latitude:
+                type: number
+              longitude:
+                type: number
+              speed:
+                type: number
+              timestamp:
+                type: string
+                format: date-time
+
+    UpdateRideStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [DRIVER_ARRIVED, IN_TRANSIT, COMPLETED]
+        actual_distance_km:
+          type: number
+        actual_duration_minutes:
+          type: integer
+
+    ProcessPaymentRequest:
+      type: object
+      required: [ride_id, payment_method, amount]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        payment_method:
+          type: string
+          enum: [CASH, DIGITAL_WALLET, CREDIT_CARD]
+        card_token:
+          type: string
+          example: "tok_visa_4242"
+        amount:
+          type: number
+          example: 88000
+
+    PaymentTransactionResponse:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PENDING, SUCCESS, FAILED, FALLBACK_CASH]
+          example: "SUCCESS"
+        amount:
+          type: number
+          example: 88000
+
+    PaymentInvoiceResponse:
+      type: object
+      properties:
+        invoice_number:
+          type: string
+          example: "INV-2026-009182"
+        final_charged_amount:
+          type: number
+          example: 88000
+        paid_at:
+          type: string
+          format: date-time
+
+    SubmitReviewRequest:
+      type: object
+      required: [ride_id, rating_stars]
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+        rating_stars:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        feedback_tags:
+          type: array
+          items:
+            type: string
+        comment:
+          type: string
+          example: "Tài xế lái xe an toàn, phục vụ nhiệt tình."
+
+    ErrorResponse:
+      type: object
+      required: [error_code, message, timestamp]
+      properties:
+        error_code:
+          type: string
+          example: "BAD_REQUEST"
+        message:
+          type: string
+          example: "Dữ liệu không hợp lệ."
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequestError:
+      description: Dữ liệu gửi lên không đúng định dạng
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

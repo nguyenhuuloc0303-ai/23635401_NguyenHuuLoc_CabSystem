@@ -1,0 +1,625 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Auth & User Microservice API
+  description: |
+    ### Phân hệ 1: Quản lý Tài khoản & Người dùng (Auth & User Service)
+    - **Đề tài**: Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh (CAB System)
+    - **Tác giả**: Nguyễn Hữu Lộc - MSSV: 23635401
+    - **Phạm vi Use Case**:
+      - `UC01`: Đăng ký tài khoản (Khách hàng)
+      - `UC02`: Đăng nhập hệ thống (Khách hàng, Tài xế, Vận hành, Lãnh đạo)
+      - `UC03`: Cập nhật thông tin cá nhân
+      - `UC10`: Đăng ký hồ sơ & phương tiện (Tài xế)
+    - **Yêu cầu chức năng**: `FR01`, `FR02`, `FR03`, `FR04`, `FR05`, `FR23`
+    - **Cơ sở dữ liệu đề xuất**: PostgreSQL / MongoDB (`UserDB`)
+  version: 1.0.0-mvp
+  contact:
+    name: Nguyễn Hữu Lộc
+    email: 23635401@student.edu.vn
+
+servers:
+  - url: http://localhost:8081/api/v1
+    description: Local Auth Service
+  - url: https://api.cabsystem.vn/api/v1
+    description: API Gateway (Production)
+
+tags:
+  - name: Authentication
+    description: Đăng ký, xác thực OTP, đăng nhập JWT và cấp lại mã token
+  - name: User Profile
+    description: Xem và cập nhật hồ sơ cá nhân người dùng
+  - name: Driver Profile & Vehicle
+    description: Quản lý hồ sơ đối tác tài xế và khai báo thông tin phương tiện
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Đăng ký tài khoản mới (UC01 / FR01)
+      description: |
+        Cho phép khách hàng tạo tài khoản bằng Số điện thoại, Họ tên và Mật khẩu.
+        Hệ thống sẽ kích hoạt gửi mã OTP 6 số qua SMS (hết hạn trong 120 giây).
+      operationId: registerCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              phone_number: "0901234567"
+              full_name: "Nguyễn Văn A"
+              email: "nguyenvana@gmail.com"
+              password: "SecurePassword123@"
+              confirm_password: "SecurePassword123@"
+      responses:
+        '201':
+          description: Yêu cầu đăng ký được tiếp nhận; mã SMS OTP đã được phát hành
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Mã OTP xác thực 6 chữ số đã được gửi qua SMS."
+                  user_id:
+                    type: string
+                    format: uuid
+                    example: "b1f8c14e-6e27-4a11-89be-0d6d5a1b32d1"
+                  otp_expires_in_seconds:
+                    type: integer
+                    example: 120
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '409':
+          description: Số điện thoại hoặc Email đã tồn tại trong hệ thống
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_code: "PHONE_ALREADY_EXISTS"
+                message: "Số điện thoại này đã được đăng ký trên hệ thống."
+                timestamp: "2026-09-07T18:45:00Z"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/verify-otp:
+    post:
+      tags:
+        - Authentication
+      summary: Xác thực mã SMS OTP kích hoạt tài khoản (UC01 / FR01 / FR23)
+      description: Kiểm tra mã OTP 6 số. Nếu hợp lệ, tài khoản chuyển sang trạng thái ACTIVE và trả về JWT Token.
+      operationId: verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone_number
+                - otp_code
+              properties:
+                phone_number:
+                  type: string
+                  pattern: '^[0-9]{10,11}$'
+                  example: "0901234567"
+                otp_code:
+                  type: string
+                  pattern: '^[0-9]{6}$'
+                  example: "839201"
+      responses:
+        '200':
+          description: Kích hoạt tài khoản thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '400':
+          description: Mã OTP không chính xác hoặc đã quá thời hạn 120s
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_code: "OTP_INVALID_OR_EXPIRED"
+                message: "Mã xác thực không chính xác hoặc đã hết hạn hiệu lực."
+                timestamp: "2026-09-07T18:45:00Z"
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Đăng nhập hệ thống (UC02 / FR02 / FR03)
+      description: |
+        Xác thực bằng Số điện thoại và Mật khẩu. Hỗ trợ tất cả 4 Roles:
+        `CUSTOMER`, `DRIVER`, `OPERATOR`, `ADMIN`.
+        Hệ thống cấp phát JWT Access Token (15 phút) và Refresh Token (7 ngày).
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              phone_number: "0901234567"
+              password: "SecurePassword123@"
+      responses:
+        '200':
+          description: Đăng nhập thành công, trả về Access Token và Refresh Token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSuccessResponse'
+        '401':
+          description: Sai số điện thoại hoặc mật khẩu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_code: "INVALID_CREDENTIALS"
+                message: "Số điện thoại hoặc mật khẩu không đúng."
+                timestamp: "2026-09-07T18:45:00Z"
+        '403':
+          description: Tài khoản bị khóa (LOCKED / SUSPENDED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_code: "ACCOUNT_SUSPENDED"
+                message: "Tài khoản của bạn đã bị khóa do vi phạm chính sách."
+                timestamp: "2026-09-07T18:45:00Z"
+
+  /auth/refresh-token:
+    post:
+      tags:
+        - Authentication
+      summary: Cấp mới Access Token bằng Refresh Token (FR02)
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Cấp token mới thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: "Bearer"
+                  expires_in_seconds:
+                    type: integer
+                    example: 900
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Yêu cầu OTP khôi phục mật khẩu (UC02)
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone_number
+              properties:
+                phone_number:
+                  type: string
+                  example: "0901234567"
+      responses:
+        '200':
+          description: Mã OTP đã gửi thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Mã OTP khôi phục mật khẩu đã được gửi qua SMS."
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Thiết lập lại mật khẩu mới sau khi xác thực OTP (UC02)
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone_number
+                - otp_code
+                - new_password
+              properties:
+                phone_number:
+                  type: string
+                  example: "0901234567"
+                otp_code:
+                  type: string
+                  example: "482019"
+                new_password:
+                  type: string
+                  minLength: 8
+                  example: "NewSecurePassword456@"
+      responses:
+        '200':
+          description: Đặt lại mật khẩu thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Mật khẩu đã được cập nhật thành công."
+
+  /users/profile:
+    get:
+      tags:
+        - User Profile
+      summary: Lấy thông tin hồ sơ người dùng hiện tại (UC03 / FR04)
+      operationId: getCurrentUserProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thông tin chi tiết hồ sơ người dùng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      tags:
+        - User Profile
+      summary: Cập nhật thông tin cá nhân (UC03 / FR04)
+      description: Cho phép cập nhật họ tên, email, ảnh đại diện.
+      operationId: updateUserProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+            example:
+              full_name: "Nguyễn Văn A (Cập nhật)"
+              email: "nguyenvana.updated@gmail.com"
+              avatar_url: "https://cdn.cabsystem.vn/avatars/user_01.jpg"
+      responses:
+        '200':
+          description: Cập nhật hồ sơ thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /drivers/vehicle:
+    post:
+      tags:
+        - Driver Profile & Vehicle
+      summary: Đăng ký hồ sơ giấy phép lái xe & thông tin phương tiện (UC10 / FR05)
+      description: |
+        Tài xế khai báo Giấy phép lái xe (GPLX), Loại dịch vụ xe (BIKE, CAR_4, CAR_7),
+        Biển số đăng ký, Nhãn hiệu, Dòng xe và ảnh giấy tờ liên quan để chờ Quản trị viên duyệt.
+      operationId: registerDriverVehicle
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverVehicleRegistrationRequest'
+      responses:
+        '201':
+          description: Hồ sơ phương tiện đã gửi phê duyệt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    get:
+      tags:
+        - Driver Profile & Vehicle
+      summary: Tra cứu thông tin xe và trạng thái duyệt của tài xế (UC10)
+      operationId: getDriverVehicle
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thông tin xe và trạng thái phê duyệt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Nhập JWT Access Token định dạng: Bearer <token>"
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - phone_number
+        - full_name
+        - password
+        - confirm_password
+      properties:
+        phone_number:
+          type: string
+          pattern: '^[0-9]{10,11}$'
+          example: "0901234567"
+        full_name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: "Nguyễn Văn A"
+        email:
+          type: string
+          format: email
+          example: "nguyenvana@gmail.com"
+        password:
+          type: string
+          minLength: 8
+          example: "SecurePassword123@"
+        confirm_password:
+          type: string
+          minLength: 8
+          example: "SecurePassword123@"
+
+    LoginRequest:
+      type: object
+      required:
+        - phone_number
+        - password
+      properties:
+        phone_number:
+          type: string
+          example: "0901234567"
+        password:
+          type: string
+          example: "SecurePassword123@"
+
+    AuthSuccessResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          example: "Bearer"
+        expires_in_seconds:
+          type: integer
+          example: 900
+        user:
+          $ref: '#/components/schemas/UserProfileResponse'
+
+    UserProfileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "b1f8c14e-6e27-4a11-89be-0d6d5a1b32d1"
+        phone_number:
+          type: string
+          example: "0901234567"
+        full_name:
+          type: string
+          example: "Nguyễn Văn A"
+        email:
+          type: string
+          example: "nguyenvana@gmail.com"
+        avatar_url:
+          type: string
+          example: "https://cdn.cabsystem.vn/avatars/user_01.jpg"
+        role:
+          type: string
+          enum: [CUSTOMER, DRIVER, OPERATOR, ADMIN]
+          example: "CUSTOMER"
+        status:
+          type: string
+          enum: [PENDING, ACTIVE, SUSPENDED]
+          example: "ACTIVE"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-09-07T12:00:00Z"
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          example: "Nguyễn Văn A"
+        email:
+          type: string
+          format: email
+          example: "nguyenvana@gmail.com"
+        avatar_url:
+          type: string
+          example: "https://cdn.cabsystem.vn/avatars/user_01.jpg"
+
+    DriverVehicleRegistrationRequest:
+      type: object
+      required:
+        - license_number
+        - vehicle_type
+        - license_plate
+        - brand
+        - model
+      properties:
+        license_number:
+          type: string
+          description: Số Giấy phép lái xe (GPLX)
+          example: "790123456789"
+        vehicle_type:
+          type: string
+          enum: [BIKE, CAR_4, CAR_7]
+          example: "CAR_4"
+        license_plate:
+          type: string
+          description: Biển kiểm soát xe
+          example: "51K-123.45"
+        brand:
+          type: string
+          example: "Toyota"
+        model:
+          type: string
+          example: "Vios 2023"
+        registration_certificate_url:
+          type: string
+          description: Ảnh giấy đăng ký xe
+          example: "https://cdn.cabsystem.vn/docs/reg_51k12345.jpg"
+
+    VehicleResponse:
+      type: object
+      properties:
+        vehicle_id:
+          type: string
+          format: uuid
+          example: "f2c99b82-990a-4284-a15d-d92e59df9101"
+        driver_id:
+          type: string
+          format: uuid
+          example: "c4b1234e-6e27-4a11-89be-0d6d5a1b32d2"
+        license_number:
+          type: string
+          example: "790123456789"
+        vehicle_type:
+          type: string
+          enum: [BIKE, CAR_4, CAR_7]
+          example: "CAR_4"
+        license_plate:
+          type: string
+          example: "51K-123.45"
+        brand:
+          type: string
+          example: "Toyota"
+        model:
+          type: string
+          example: "Vios 2023"
+        approval_status:
+          type: string
+          enum: [PENDING_APPROVAL, APPROVED, REJECTED]
+          example: "PENDING_APPROVAL"
+        rejection_reason:
+          type: string
+          nullable: true
+          example: null
+
+    ErrorResponse:
+      type: object
+      required:
+        - error_code
+        - message
+        - timestamp
+      properties:
+        error_code:
+          type: string
+          example: "VALIDATION_FAILED"
+        message:
+          type: string
+          example: "Dữ liệu gửi lên không đúng quy chuẩn."
+        details:
+          type: array
+          items:
+            type: string
+          example: ["phone_number không đúng định dạng 10 chữ số."]
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-09-07T18:45:00Z"
+
+  responses:
+    BadRequestError:
+      description: Dữ liệu gửi lên không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error_code: "BAD_REQUEST"
+            message: "Tham số gửi lên không hợp lệ."
+            timestamp: "2026-09-07T18:45:00Z"
+
+    UnauthorizedError:
+      description: Thiếu Token xác thực hoặc Token đã hết hạn
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error_code: "UNAUTHORIZED"
+            message: "Yêu cầu đăng nhập để truy cập tài nguyên này."
+            timestamp: "2026-09-07T18:45:00Z"
+
+    InternalServerError:
+      description: Lỗi máy chủ nội bộ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error_code: "INTERNAL_SERVER_ERROR"
+            message: "Hệ thống đang gặp sự cố. Vui lòng thử lại sau."
+            timestamp: "2026-09-07T18:45:00Z"

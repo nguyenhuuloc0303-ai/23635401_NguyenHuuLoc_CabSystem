@@ -1,0 +1,377 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Fare & Payment Microservice API
+  description: |
+    ### Phân hệ 3: Tính cước & Thanh toán (Fare & Payment Service)
+    - **Đề tài**: Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh (CAB System)
+    - **Tác giả**: Nguyễn Hữu Lộc - MSSV: 23635401
+    - **Phạm vi Use Case**:
+      - `UC07`: Thanh toán chuyến đi (Khách hàng, Tài xế, Cổng thanh toán)
+    - **Yêu cầu chức năng**: `FR19`, `FR20`, `FR21`, `FR22`, `FR24`
+    - **Quy tắc nghiệp vụ**:
+      - `RULE-04`: Chốt cước thực tế (Final Fare) theo quãng đường GPS và thời gian di chuyển thực tế.
+      - `RULE-05`: Tuân thủ PCI-DSS qua cơ chế Tokenization, tuyệt đối không lưu thông tin thẻ nhạy cảm (Số thẻ, CVV).
+      - `RULE-06` & `EX05`, `EX06`: Cơ chế Fallback tự động sang Tiền mặt khi thanh toán điện tử thất bại hoặc cổng thanh toán sập/timeout quá 30 giây.
+    - **Cơ sở dữ liệu đề xuất**: PostgreSQL (`PaymentDB`)
+  version: 1.0.0-mvp
+  contact:
+    name: Nguyễn Hữu Lộc
+    email: 23635401@student.edu.vn
+
+servers:
+  - url: http://localhost:8083/api/v1
+    description: Local Payment Service
+  - url: https://api.cabsystem.vn/api/v1
+    description: API Gateway (Production)
+
+tags:
+  - name: Payment Processing
+    description: Xử lý trừ tiền, tích hợp Cổng thanh toán và Fallback tiền mặt
+  - name: Payment Invoices & Webhooks
+    description: Đối soát, biên lai thanh toán và Webhook từ cổng tài chính
+
+paths:
+  /payments/process:
+    post:
+      tags:
+        - Payment Processing
+      summary: Khởi tạo giao dịch thanh toán cho cuốc xe (UC07 / FR19 / FR20 / FR21 / RULE-05)
+      description: |
+        Được gọi sau khi cuốc xe hoàn tất di chuyển (`PAYMENT_PENDING`).
+        Hỗ trợ:
+        1. **Tiền mặt (CASH)**: Tài xế thu trực tiếp từ khách.
+        2. **Thanh toán số (DIGITAL_WALLET / CREDIT_CARD)**: Gửi mã Token thẻ đã lưu sang Cổng thanh toán đối tác để trừ tiền tự động.
+      operationId: processPayment
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessPaymentRequest'
+            example:
+              ride_id: "e3a89c91-9e20-4e55-89b1-6a0b12d34e56"
+              payment_method: "CREDIT_CARD"
+              card_token: "tok_visa_4242_sandbox_12345"
+              amount: 88000
+      responses:
+        '200':
+          description: Xử lý thanh toán thành công hoặc đang chờ xác nhận
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentTransactionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '402':
+          description: Thanh toán điện tử thất bại (thẻ hết hạn, không đủ số dư), kích hoạt Fallback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error_code: "PAYMENT_CHARGE_FAILED"
+                message: "Thẻ ngân hàng không đủ số dư hoặc bị từ chối. Vui lòng chuyển sang Tiền mặt."
+                timestamp: "2026-09-07T18:45:00Z"
+
+  /payments/{paymentId}/fallback-cash:
+    post:
+      tags:
+        - Payment Processing
+      summary: Kích hoạt Fallback chuyển đổi sang Tiền mặt (FR22 / RULE-06 / EX05 / EX06)
+      description: |
+        Tự động hoặc thủ công chuyển đổi phương thức thanh toán sang Tiền mặt khi Cổng thanh toán báo lỗi
+        hoặc không phản hồi sau 30 giây. Gửi thông báo cho Tài xế để thu tiền mặt trực tiếp.
+      operationId: fallbackToCash
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  example: "Cổng thanh toán thẻ báo lỗi INSUFFICIENT_FUNDS"
+      responses:
+        '200':
+          description: Chuyển đổi sang tiền mặt thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentTransactionResponse'
+
+  /payments/{paymentId}/confirm-cash:
+    post:
+      tags:
+        - Payment Processing
+      summary: Tài xế xác nhận đã thu đủ tiền mặt (UC07 / FR20 / RULE-06)
+      description: |
+        Tài xế bấm xác nhận đã nhận đủ tiền mặt từ khách hàng.
+        Hệ thống chính thức đóng trạng thái cuốc xe sang `COMPLETED` và mở màn hình đánh giá sao.
+      operationId: confirmCashPayment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount_received
+              properties:
+                amount_received:
+                  type: number
+                  example: 88000
+      responses:
+        '200':
+          description: Xác nhận thu tiền mặt thành công, chuyến xe hoàn tất
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  ride_status:
+                    type: string
+                    example: "COMPLETED"
+                  message:
+                    type: string
+                    example: "Đã thu tiền mặt thành công. Cuốc xe đã hoàn tất."
+
+  /payments/webhook:
+    post:
+      tags:
+        - Payment Invoices & Webhooks
+      summary: Nhận kết quả thanh toán bất đồng bộ từ Cổng thanh toán (FR21 / RULE-05)
+      description: Webhook lắng nghe tín hiệu từ Gateway (VNPay/MoMo/Stripe Sandbox) để cập nhật trạng thái hóa đơn.
+      operationId: handlePaymentWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transaction_id
+                - external_reference
+                - status
+                - signature
+              properties:
+                transaction_id:
+                  type: string
+                  example: "cab_txn_9872134"
+                external_reference:
+                  type: string
+                  example: "GW_SANDBOX_TXN_991823"
+                status:
+                  type: string
+                  enum: [SUCCESS, FAILED]
+                  example: "SUCCESS"
+                amount:
+                  type: number
+                  example: 88000
+                signature:
+                  type: string
+                  example: "9a0f4e18b6287c...sha256hmac"
+      responses:
+        '200':
+          description: Tiếp nhận Webhook thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+
+  /payments/{paymentId}:
+    get:
+      tags:
+        - Payment Invoices & Webhooks
+      summary: Xem biên lai và chi tiết hóa đơn thanh toán (UC07)
+      operationId: getPaymentInvoice
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Thông tin hóa đơn thanh toán
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentInvoiceResponse'
+        '404':
+          description: Không tìm thấy giao dịch
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ProcessPaymentRequest:
+      type: object
+      required:
+        - ride_id
+        - payment_method
+        - amount
+      properties:
+        ride_id:
+          type: string
+          format: uuid
+          example: "e3a89c91-9e20-4e55-89b1-6a0b12d34e56"
+        payment_method:
+          type: string
+          enum: [CASH, DIGITAL_WALLET, CREDIT_CARD]
+          example: "CREDIT_CARD"
+        card_token:
+          type: string
+          description: Mã token đại diện thẻ bảo mật (không chứa số thẻ nhạy cảm)
+          example: "tok_visa_4242_sandbox_12345"
+        amount:
+          type: number
+          description: Số tiền cước thực tế cuối cùng
+          example: 88000
+
+    PaymentTransactionResponse:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+          example: "a991823b-6e27-4a11-89be-0d6d5a1b32d5"
+        ride_id:
+          type: string
+          format: uuid
+          example: "e3a89c91-9e20-4e55-89b1-6a0b12d34e56"
+        amount:
+          type: number
+          example: 88000
+        currency:
+          type: string
+          example: "VND"
+        payment_method:
+          type: string
+          enum: [CASH, DIGITAL_WALLET, CREDIT_CARD]
+          example: "CASH"
+        status:
+          type: string
+          enum: [PENDING, SUCCESS, FAILED, FALLBACK_CASH]
+          example: "SUCCESS"
+        transaction_reference:
+          type: string
+          nullable: true
+          example: "GW_SANDBOX_TXN_991823"
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PaymentInvoiceResponse:
+      type: object
+      properties:
+        invoice_number:
+          type: string
+          example: "INV-2026-009182"
+        ride_id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+          example: "Nguyễn Văn A"
+        driver_name:
+          type: string
+          example: "Trần Văn B"
+        vehicle_plate:
+          type: string
+          example: "51K-123.45"
+        distance_km:
+          type: number
+          example: 7.4
+        duration_minutes:
+          type: integer
+          example: 24
+        base_fare:
+          type: number
+          example: 20000
+        distance_fare:
+          type: number
+          example: 54000
+        time_fare:
+          type: number
+          example: 14400
+        total_amount:
+          type: number
+          example: 88400
+        discount_amount:
+          type: number
+          example: 0
+        final_charged_amount:
+          type: number
+          example: 88000
+        payment_method:
+          type: string
+          example: "CASH"
+        paid_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - error_code
+        - message
+        - timestamp
+      properties:
+        error_code:
+          type: string
+          example: "ERROR_CODE"
+        message:
+          type: string
+          example: "Mô tả chi tiết lỗi"
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequestError:
+      description: Dữ liệu không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
