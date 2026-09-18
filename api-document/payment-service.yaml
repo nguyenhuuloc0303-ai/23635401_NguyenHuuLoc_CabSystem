@@ -6,7 +6,7 @@ info:
     - **Đề tài**: Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh (CAB System)
     - **Tác giả**: Nguyễn Hữu Lộc - MSSV: 23635401
     - **Phạm vi Use Case**:
-      - `UC07`: Thanh toán chuyến đi (Khách hàng, Tài xế, Cổng thanh toán)
+      - `UC11`: Thanh toán chuyến đi (Khách hàng, Tài xế, Cổng thanh toán)
     - **Yêu cầu chức năng**: `FR19`, `FR20`, `FR21`, `FR22`, `FR24`
     - **Quy tắc nghiệp vụ**:
       - `RULE-04`: Chốt cước thực tế (Final Fare) theo quãng đường GPS và thời gian di chuyển thực tế.
@@ -35,7 +35,7 @@ paths:
     post:
       tags:
         - Payment Processing
-      summary: Khởi tạo giao dịch thanh toán cho cuốc xe (UC07 / FR19 / FR20 / FR21 / RULE-05)
+      summary: Khởi tạo giao dịch thanh toán cho cuốc xe (UC11 / FR19 / FR20 / FR21 / RULE-05)
       description: |
         Được gọi sau khi cuốc xe hoàn tất di chuyển (`PAYMENT_PENDING`).
         Hỗ trợ:
@@ -117,7 +117,7 @@ paths:
     post:
       tags:
         - Payment Processing
-      summary: Tài xế xác nhận đã thu đủ tiền mặt (UC07 / FR20 / RULE-06)
+      summary: Tài xế xác nhận đã thu đủ tiền mặt (UC11 / FR20 / RULE-06)
       description: |
         Tài xế bấm xác nhận đã nhận đủ tiền mặt từ khách hàng.
         Hệ thống chính thức đóng trạng thái cuốc xe sang `COMPLETED` và mở màn hình đánh giá sao.
@@ -212,7 +212,7 @@ paths:
     get:
       tags:
         - Payment Invoices & Webhooks
-      summary: Xem biên lai và chi tiết hóa đơn thanh toán (UC07)
+      summary: Xem biên lai và chi tiết hóa đơn thanh toán (UC11)
       operationId: getPaymentInvoice
       security:
         - BearerAuth: []

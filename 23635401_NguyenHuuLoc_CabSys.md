@@ -1,4 +1,4 @@
-# TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) & PHÂN TÍCH HỆ THỐNG - CAB SYSTEM
+﻿# TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) & PHÂN TÍCH HỆ THỐNG - CAB SYSTEM
 
 - **Họ tên**: Nguyễn Hữu Lộc
 
@@ -266,755 +266,1370 @@ quadrantChart
 | **Nhà cung cấp Thanh toán** | Secondary Actor | Hệ thống đối tác tài chính bên ngoài tiếp nhận yêu cầu thanh toán và phản hồi kết quả trừ tiền. |
 | **Nhà cung cấp Thông báo** | Secondary Actor | Hạ tầng đám mây bên ngoài (FCM/SMS) hỗ trợ truyền dẫn thông điệp thông báo đẩy và tin nhắn OTP. |
 
-### 7.2. Bảng Phân bổ 17 Use Cases Độc lập
+### 7.2. Bảng Phân bổ 14 Use Cases Cốt lõi
 
 | Phân hệ Nghiệp vụ | Mã UC | Tên Use Case Nghiệp vụ | Actor chính | Functional Requirements |
 | :--- | :--- | :--- | :--- | :--- |
-| **1. Quản lý Tài khoản** | UC01 | Đăng ký tài khoản | Khách hàng | FR01, FR23 |
+| **1. Quản lý Tài khoản & Định danh** | UC01 | Đăng ký tài khoản | Khách hàng | FR01, FR23 |
 | | UC02 | Đăng nhập hệ thống | Khách hàng, Tài xế, Vận hành, Lãnh đạo | FR02, FR03 |
 | | UC03 | Cập nhật thông tin cá nhân | Khách hàng, Tài xế, Vận hành, Lãnh đạo | FR04 |
-| | UC10 | Đăng ký hồ sơ & phương tiện | Tài xế | FR05 |
-| **2. Điều phối & Chuyến đi** | UC04 | Đặt xe | Khách hàng | FR06, FR07, FR10, FR11, FR14, FR24 |
-| | UC05 | Hủy yêu cầu đặt xe | Khách hàng | FR15 |
-| | UC06 | Theo dõi chuyến đi | Khách hàng | FR17 |
-| | UC09 | Xem lịch sử chuyến đi | Khách hàng, Tài xế | FR18 |
-| | UC11 | Bật / Tắt trạng thái hoạt động | Tài xế | FR08, FR09 |
-| | UC12 | Tiếp nhận chuyến xe | Tài xế | FR12, FR24 |
-| | UC13 | Từ chối chuyến xe | Tài xế | FR12, FR13 |
-| | UC14 | Cập nhật tiến trình chuyến đi | Tài xế | FR16, FR19, FR24 |
-| **3. Tính cước & Thanh toán** | UC07 | Thanh toán chuyến đi | Khách hàng, Tài xế, Nhà cung cấp Thanh toán | FR20, FR21, FR22, FR24 |
-| **4. Quản trị & Báo cáo** | UC08 | Đánh giá tài xế | Khách hàng | FR25 |
-| | UC15 | Quản lý người dùng & Duyệt tài xế | Nhân viên Vận hành | FR26, FR27 |
-| | UC16 | Giám sát & Can thiệp sự cố | Nhân viên Vận hành | FR28, FR29, FR30 |
-| | UC17 | Xem báo cáo thống kê | Ban lãnh đạo | FR31, FR32 |
+| | UC04 | Đăng ký hồ sơ & phương tiện | Tài xế | FR05 |
+| **2. Điều phối & Vòng đời Chuyến đi** | UC05 | Đặt xe | Khách hàng | FR06, FR07, FR10, FR11, FR14, FR24 |
+| | UC06 | Hủy yêu cầu đặt xe | Khách hàng | FR15 |
+| | UC07 | Tiếp nhận & Phản hồi chuyến xe | Tài xế | FR08, FR09, FR11, FR12, FR13, FR24 |
+| | UC08 | Cập nhật tiến trình chuyến đi | Tài xế | FR16, FR19, FR24 |
+| | UC09 | Theo dõi chuyến đi | Khách hàng | FR17 |
+| | UC10 | Xem lịch sử chuyến đi | Khách hàng, Tài xế | FR18 |
+| **3. Tính cước & Thanh toán** | UC11 | Thanh toán chuyến đi | Khách hàng, Tài xế, Cổng Thanh toán | FR20, FR21, FR22, FR24 |
+| **4. Quản trị, Đánh giá & Báo cáo** | UC12 | Đánh giá & Phản hồi tài xế | Khách hàng | FR25 |
+| | UC13 | Quản lý tài khoản & Duyệt tài xế | Nhân viên Vận hành | FR26, FR27 |
+| | UC14 | Giám sát vận hành & Báo cáo thống kê | Nhân viên Vận hành, Ban lãnh đạo | FR28, FR29, FR30, FR31, FR32 |
 
 ### 7.3. Sơ đồ Use Case Tổng thể (Use Case Diagram)
 
 ```mermaid
-
 flowchart LR
-
     %% ==========================================
-
-    %% 1. ACTORS BÊN TRÁI (USERS DI ĐỘNG)
-
+    %% 1. ACTORS BÊN TRÁI (NGƯỜI DÙNG DI ĐỘNG)
     %% ==========================================
-
     KH[" Khách hàng"]
-
     TX[" Tài xế"]
 
     %% ==========================================
-
-    %% 2. SYSTEM BOUNDARY
-
+    %% 2. SYSTEM BOUNDARY (HỆ THỐNG CAB SYSTEM)
     %% ==========================================
-
     subgraph SYSTEM ["HỆ THỐNG ĐẶT XE TRỰC TUYẾN - CAB SYSTEM"]
+        %% Tâm hệ thống - Xác thực
+        DN((UC02: Đăng nhập))
 
-        %% Tâm hệ thống
+        %% Use Cases phía Khách hàng
+        UC_DK_KH((UC01: Đăng ký tài khoản))
+        UC_QLTT((UC03: Cập nhật thông tin cá nhân))
+        UC_DATXE((UC05: Đặt xe))
+        UC_HUYXE((UC06: Hủy yêu cầu đặt xe))
+        UC_TRACK((UC09: Theo dõi chuyến đi))
+        UC_PAY((UC11: Thanh toán chuyến đi))
+        UC_RATE((UC12: Đánh giá tài xế))
+        UC_LS((UC10: Xem lịch sử chuyến đi))
 
-        DN((Đăng nhập))
+        %% Use Cases phía Tài xế
+        UC_DK_TX((UC04: Đăng ký hồ sơ & xe))
+        UC_NHAN_CUOC((UC07: Tiếp nhận & Phản hồi chuyến xe))
+        UC_TIENDO((UC08: Cập nhật tiến trình chuyến))
 
-        %% Use Cases phía Khách hàng (Bên trái)
+        %% Use Cases Quản trị & Vận hành
+        UC_QL_USER((UC13: Quản lý tài khoản & Duyệt tài xế))
+        UC_OPERATIONS((UC14: Giám sát vận hành & Báo cáo))
 
-        UC_DK_KH((Đăng ký tài khoản))
-
-        UC_QLTT((Cập nhật thông tin cá nhân))
-
-        UC_DATXE((Đặt xe))
-
-        UC_HUYXE((Hủy yêu cầu đặt xe))
-
-        UC_TRACK((Theo dõi chuyến đi))
-
-        UC_LS((Xem lịch sử chuyến đi))
-
-        UC_RATE((Đánh giá tài xế))
-
-        %% Use Cases phía Tài xế (Bên trái & Dưới trái)
-
-        UC_DK_TX((Đăng ký hồ sơ & xe))
-
-        UC_ONLINE((Bật/Tắt trạng thái hoạt động))
-
-        UC_NHAN((Tiếp nhận chuyến xe))
-
-        UC_TUCHOI((Từ chối chuyến xe))
-
-        UC_TIENDO((Cập nhật tiến trình chuyến))
-
-        %% Use Cases Thanh toán & Quản trị (Bên phải)
-
-        UC_PAY((Thanh toán chuyến đi))
-
-        UC_QL_USER((Quản lý người dùng & Duyệt tài xế))
-
-        UC_GS_CUOC((Giám sát & Xử lý sự cố))
-
-        UC_BAOCAO((Xem báo cáo thống kê / KPI))
-
-        %% Use Case Đăng xuất ở đáy
-
-        DX((Đăng xuất<br/><i>extension points: Logout</i>))
-
+        %% Điểm mở rộng
+        DX((Đăng xuất<br/><i>extension point: Logout</i>))
     end
 
     %% ==========================================
-
-    %% 3. ACTORS BÊN PHẢI (QUẢN TRỊ VIÊN & ĐỐI TÁC NGOÀI)
-
+    %% 3. ACTORS BÊN PHẢI (QUẢN TRỊ & ĐỐI TÁC)
     %% ==========================================
-
     NV[" Nhân viên vận hành"]
-
     BL[" Ban lãnh đạo"]
-
     PP[" Cổng thanh toán"]
 
     %% ==========================================
-
     %% 4. TƯƠNG TÁC ACTOR -> USE CASE (NÉT LIỀN)
-
     %% ==========================================
-
-    
-
     %% Khách hàng
-
     KH --- UC_DK_KH
-
     KH --- UC_QLTT
-
     KH --- UC_DATXE
-
     KH --- UC_HUYXE
-
     KH --- UC_TRACK
-
     KH --- UC_PAY
-
     KH --- UC_RATE
-
     KH --- UC_LS
 
     %% Tài xế
-
     TX --- UC_DK_TX
-
     TX --- UC_QLTT
-
-    TX --- UC_ONLINE
-
-    TX --- UC_NHAN
-
-    TX --- UC_TUCHOI
-
+    TX --- UC_NHAN_CUOC
     TX --- UC_TIENDO
-
     TX --- UC_PAY
-
     TX --- UC_LS
 
     %% Nhân viên vận hành
-
     NV --- UC_QLTT
-
     NV --- UC_QL_USER
-
-    NV --- UC_GS_CUOC
+    NV --- UC_OPERATIONS
 
     %% Ban lãnh đạo
-
     BL --- UC_QLTT
-
-    BL --- UC_BAOCAO
+    BL --- UC_OPERATIONS
 
     %% Cổng thanh toán (Secondary Actor)
-
     PP --- UC_PAY
 
     %% ==========================================
-
-    %% 5. QUAN HỆ <<INCLUDE>> VÀO TÂM ĐĂNG NHẬP (NÉT ĐỨT)
-
+    %% 5. QUAN HỆ <<INCLUDE>> VÀO ĐĂNG NHẬP
     %% ==========================================
-
     UC_QLTT -.->|<<include>>| DN
-
     UC_DATXE -.->|<<include>>| DN
-
     UC_HUYXE -.->|<<include>>| DN
-
     UC_TRACK -.->|<<include>>| DN
-
     UC_LS -.->|<<include>>| DN
-
     UC_RATE -.->|<<include>>| DN
-
-    UC_ONLINE -.->|<<include>>| DN
-
-    UC_NHAN -.->|<<include>>| DN
-
-    UC_TUCHOI -.->|<<include>>| DN
-
+    UC_NHAN_CUOC -.->|<<include>>| DN
     UC_TIENDO -.->|<<include>>| DN
-
     UC_PAY -.->|<<include>>| DN
-
     UC_QL_USER -.->|<<include>>| DN
-
-    UC_GS_CUOC -.->|<<include>>| DN
-
-    UC_BAOCAO -.->|<<include>>| DN
+    UC_OPERATIONS -.->|<<include>>| DN
 
     %% Quan hệ <<extend>> Đăng xuất
-
     DX -.->|<<extend>>| DN
-
 ```
 
 ---
 
 ## 8. ĐẶC TẢ CHI TIẾT USE CASE (USE CASE SPECIFICATIONS)
 
-### 8.1. UC01 - ĐĂNG KÝ TÀI KHOẢN
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC01 - Đăng ký tài khoản |
-| **Mô tả sơ lược:** Cho phép người dùng mới (Khách hàng) đăng ký tài khoản mới trên CAB System bằng Số điện thoại và mật khẩu cá nhân kèm xác thực OTP. |
-| **Actor chính:** Khách hàng |
-| **Actor phụ:** Nhà cung cấp Thông báo (Cổng SMS) |
-| **Tiền điều kiện (Pre-condition):** Khách hàng chưa có tài khoản trên hệ thống và thiết bị có kết nối Internet. |
-| **Hậu điều kiện (Post-condition):** Bản ghi tài khoản Khách hàng mới được tạo trong CSDL ở trạng thái hoạt động (ACTIVE). |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Khách hàng tải ứng dụng, mở màn hình chào mừng và nhấn chọn nút "Đăng ký". |  |
-|  | 2. Hệ thống hiển thị biểu mẫu đăng ký bao gồm các trường thông tin: Họ tên, Số điện thoại, Email (tùy chọn), Mật khẩu, và Xác nhận mật khẩu. |
-| 3. Khách hàng nhập đầy đủ các thông tin theo yêu cầu và nhấn nút "Đăng ký". |  |
-|  | 4. Hệ thống thực hiện kiểm tra tính hợp lệ của dữ liệu (Số điện thoại đúng định dạng, mật khẩu khớp và có độ dài tối thiểu từ 8 ký tự trở lên). |
-|  | 5. Hệ thống gọi API gửi mã xác thực SMS OTP (6 chữ số) đến số điện thoại đăng ký của Khách hàng thông qua Nhà cung cấp Thông báo. |
-|  | 6. Hệ thống hiển thị màn hình nhập mã xác thực OTP kèm bộ đếm ngược thời gian hiệu lực (120 giây). |
-| 7. Khách hàng nhập mã OTP nhận được từ tin nhắn SMS và nhấn nút "Xác nhận". |  |
-|  | 8. Hệ thống kiểm tra tính chính xác và thời hạn hiệu lực của mã OTP nhập vào. |
-|  | 9. Hệ thống lưu tài khoản mới vào cơ sở dữ liệu với mật khẩu đã được mã hóa, tự động đăng nhập người dùng và hiển thị màn hình trang chủ. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-|  | 4.1. Hệ thống phát hiện Số điện thoại đã được đăng ký cho một tài khoản khác trong cơ sở dữ liệu. |
-|  | 4.2. Hệ thống hiển thị thông báo lỗi: "Số điện thoại này đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng số khác." |
-| 4.3. Khách hàng quay lại bước 3 để nhập số điện thoại khác hoặc bấm chuyển sang Đăng nhập. |  |
-|  | 8.1. Hệ thống kiểm tra phát hiện mã OTP nhập vào không chính xác hoặc đã hết thời gian hiệu lực 120 giây. |
-|  | 8.2. Hệ thống hiển thị cảnh báo lỗi: "Mã xác thực không chính xác hoặc đã hết hạn. Vui lòng kiểm tra lại." |
-| 8.3. Khách hàng nhấn nút "Gửi lại OTP" nếu chưa nhận được mã. |  |
-|  | 8.4. Hệ thống tự động thực hiện lại bước 5 để tạo và gửi mã xác thực mới. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-| 3.1. Khách hàng nhấn nút "Hủy" tại bất kỳ màn hình nào trong quá trình nhập liệu. |  |
-|  | 3.2. Hệ thống xóa toàn bộ dữ liệu tạm thời, đóng biểu mẫu đăng ký và đưa người dùng trở lại màn hình chào mừng ban đầu. Kết thúc usecase. |
-|  | 5.1. Hệ thống không kết nối được với Cổng SMS của Nhà cung cấp Thông báo để gửi mã OTP. |
-|  | 5.2. Hệ thống hiển thị cảnh báo lỗi: "Dịch vụ gửi tin nhắn xác thực đang gặp sự cố. Vui lòng thử lại sau." và giữ nguyên thông tin biểu mẫu để Khách hàng không phải điền lại. Kết thúc usecase. |
-
----
-
-### 8.2. UC02 - ĐĂNG NHẬP HỆ THỐNG
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC02 - Đăng nhập hệ thống |
-| **Mô tả sơ lược:** Cho phép các tác nhân đăng nhập vào hệ thống bằng Số điện thoại và Mật khẩu để xác thực quyền truy cập và phân quyền giao diện. |
-| **Actor chính:** Khách hàng, Tài xế, Nhân viên Vận hành, Ban lãnh đạo |
-| **Actor phụ:** Không có |
-| **Tiền điều kiện (Pre-condition):** Tài khoản của người dùng đã tồn tại trong cơ sở dữ liệu của hệ thống. |
-| **Hậu điều kiện (Post-condition):** Hệ thống cấp mã JWT Token xác thực phiên làm việc, lưu log đăng nhập và điều hướng người dùng đến đúng màn hình chức năng theo vai trò. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Người dùng mở ứng dụng di động hoặc trang web quản trị và chọn nút "Đăng nhập". |  |
-|  | 2. Hệ thống hiển thị biểu mẫu đăng nhập yêu cầu nhập Số điện thoại và Mật khẩu. |
-| 3. Người dùng nhập Số điện thoại và Mật khẩu của tài khoản vào biểu mẫu. |  |
-| 4. Người dùng bấm nút "Đăng nhập". |  |
-|  | 5. Hệ thống truy vấn cơ sở dữ liệu để kiểm tra sự tồn tại của số điện thoại và đối chiếu mật khẩu đã mã hóa. |
-|  | 6. Hệ thống xác thực thông tin thành công, tạo Token JWT chứa thông tin định danh và vai trò (Role). |
-|  | 7. Hệ thống chuyển hướng người dùng đến giao diện tương ứng: Khách hàng/Tài xế vào trang chủ ứng dụng; Nhân viên/Lãnh đạo vào Trang quản trị Dashboard Web. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-| 3.1. Người dùng quên mật khẩu và nhấn vào link "Quên mật khẩu" trên màn hình. |  |
-|  | 3.2. Hệ thống hiển thị màn hình yêu cầu nhập số điện thoại để khôi phục mật khẩu. |
-| 3.3. Người dùng nhập số điện thoại và bấm "Gửi yêu cầu". |  |
-|  | 3.4. Hệ thống gửi mã OTP xác thực qua SMS và hướng dẫn người dùng thiết lập lại mật khẩu mới. |
-|  | 5.1. Hệ thống kiểm tra phát hiện Số điện thoại không tồn tại hoặc mật khẩu không khớp. |
-|  | 5.2. Hệ thống hiển thị thông báo lỗi: "Số điện thoại hoặc mật khẩu không đúng. Vui lòng kiểm tra lại." |
-| 5.3. Người dùng thực hiện lại bước 3 để nhập lại thông tin đăng nhập. |  |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 5.3. Hệ thống phát hiện tài khoản của người dùng hiện đang ở trạng thái bị khóa (LOCKED). |
-|  | 5.4. Hệ thống từ chối đăng nhập và hiển thị thông báo: "Tài khoản của bạn đã bị khóa do vi phạm chính sách. Vui lòng liên hệ bộ phận hỗ trợ." Kết thúc usecase. |
-
----
-
-### 8.3. UC03 - CẬP NHẬT THÔNG TIN CÁ NHÂN
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC03 - Cập nhật thông tin cá nhân |
-| **Mô tả sơ lược:** Cho phép người dùng chỉnh sửa thông tin cá nhân cơ bản như Họ và tên, Email, Ảnh đại diện trên hệ thống. |
-| **Actor chính:** Khách hàng, Tài xế, Nhân viên Vận hành, Ban lãnh đạo |
-| **Actor phụ:** Không có |
-| **Tiền điều kiện (Pre-condition):** Người dùng đã đăng nhập thành công vào hệ thống CAB System. |
-| **Hậu điều kiện (Post-condition):** Thông tin cá nhân mới được cập nhật vào cơ sở dữ liệu và đồng bộ hiển thị trên giao diện. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Người dùng truy cập vào mục "Tài khoản" và chọn "Chỉnh sửa hồ sơ". |  |
-|  | 2. Hệ thống truy vấn thông tin hiện tại trong cơ sở dữ liệu và hiển thị lên biểu mẫu chỉnh sửa. |
-| 3. Người dùng thực hiện thay đổi Họ tên, Email hoặc upload ảnh đại diện mới. |  |
-| 4. Người dùng nhấn nút "Lưu thay đổi". |  |
-|  | 5. Hệ thống thực hiện kiểm tra tính hợp lệ của dữ liệu đầu vào (Ví dụ: Định dạng Email đúng quy chuẩn, họ tên không chứa ký tự đặc biệt). |
-|  | 6. Hệ thống thực hiện cập nhật các trường thông tin thay đổi vào cơ sở dữ liệu. |
-|  | 7. Hệ thống hiển thị thông báo "Cập nhật thông tin thành công" và tải lại giao diện với dữ liệu mới. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-|  | 5.1. Hệ thống phát hiện định dạng Email nhập vào không đúng quy chuẩn (thiếu ký tự @ hoặc đuôi tên miền). |
-|  | 5.2. Hệ thống hiển thị thông báo lỗi cụ thể tại trường Email: "Định dạng Email không hợp lệ. Vui lòng nhập lại." |
-| 5.3. Người dùng tiến hành chỉnh sửa lại Email cho đúng định dạng và quay lại bước 4. |  |
-|  | 5.4. Hệ thống kiểm tra phát hiện Email thay đổi đã được sử dụng bởi một tài khoản khác trong cơ sở dữ liệu. |
-|  | 5.5. Hệ thống hiển thị thông báo lỗi: "Email này đã tồn tại trên hệ thống. Vui lòng sử dụng email khác." |
-| 5.6. Người dùng quay lại nhập email khác hoặc giữ nguyên email cũ và bấm Lưu. |  |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-| 4.1. Người dùng nhấn nút "Hủy" hoặc phím "Quay lại" khi đang chỉnh sửa. |  |
-|  | 4.2. Hệ thống hủy bỏ toàn bộ các thay đổi tạm thời, không lưu vào cơ sở dữ liệu và đóng biểu mẫu chỉnh sửa hồ sơ. Kết thúc usecase. |
-
----
-
-### 8.4. UC04 - ĐẶT XE
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC04 - Đặt xe |
-| **Mô tả sơ lược:** Cho phép Khách hàng thiết lập lộ trình di chuyển, xem báo giá ước tính theo thời gian thực và xác nhận gửi yêu cầu đặt xe lên hệ thống. |
-| **Actor chính:** Khách hàng |
-| **Actor phụ:** Dịch vụ Bản đồ (Map API) |
-| **Tiền điều kiện (Pre-condition):** Khách hàng đã đăng nhập tài khoản hợp lệ, thiết bị đã bật kết nối mạng Internet và cấp quyền định vị GPS. |
-| **Hậu điều kiện (Post-condition):** Yêu cầu chuyến xe được tạo lập thành công trong CSDL ở trạng thái "Đang tìm tài xế" (MATCHING) và bắt đầu kích hoạt thuật toán điều phối. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Khách hàng mở ứng dụng, chọn chức năng "Đặt xe". |  |
-|  | 2. Hệ thống tự động lấy tọa độ GPS hiện tại của thiết bị để điền vào trường "Điểm đón" và hiển thị bản đồ trực quan. |
-| 3. Khách hàng nhập vị trí "Điểm đến" vào ô tìm kiếm. |  |
-|  | 4. Hệ thống gọi Map API để định vị tọa độ hai điểm, tính toán khoảng cách lộ trình tối ưu và vẽ đường di chuyển gợi ý trên bản đồ. |
-|  | 5. Hệ thống áp dụng quy tắc tính cước để hiển thị giá tiền dự kiến tương ứng với từng loại dịch vụ xe (Xe máy, Xe ô tô 4 chỗ, Xe ô tô 7 chỗ) và các phương thức thanh toán. |
-| 6. Khách hàng lựa chọn loại dịch vụ xe mong muốn, chọn phương thức thanh toán và nhấn nút "Đặt xe". |  |
-|  | 7. Hệ thống ghi nhận yêu cầu, tạo bản ghi chuyến đi (Trip) trong cơ sở dữ liệu với trạng thái MATCHING, đồng thời hiển thị màn hình chờ kèm hiệu ứng quét tìm tài xế. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-| 3.1. Khách hàng không muốn đón tại vị trí GPS hiện tại và thực hiện thay đổi "Điểm đón" bằng tay. |  |
-|  | 3.2. Hệ thống cập nhật điểm đón mới, gọi lại Map API để tính toán lại lộ trình và chuyển tiếp sang bước 4. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 4.1. Hệ thống không kết nối được với Map API hoặc không tìm thấy lộ trình di chuyển phù hợp giữa hai điểm. |
-|  | 4.2. Hệ thống hiển thị thông báo lỗi: "Không thể xác định lộ trình. Vui lòng kiểm tra lại địa chỉ hoặc kết nối mạng." và đưa khách hàng quay lại biểu mẫu nhập liệu. Kết thúc usecase. |
-| 6.1. Khách hàng nhấn nút "Hủy đặt xe" ngay tại màn hình chờ quét tìm tài xế. |  |
-|  | 6.2. Hệ thống thu hồi yêu cầu tìm xe, cập nhật trạng thái chuyến đi thành "Đã hủy" (CANCELLED) trong CSDL và đưa khách hàng về màn hình bản đồ ban đầu. Kết thúc usecase. |
-
----
-
-### 8.5. UC05 - HỦY YÊU CẦU ĐẶT XE
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC05 - Hủy yêu cầu đặt xe |
-| **Mô tả sơ lược:** Cho phép Khách hàng chủ động hủy yêu cầu đặt xe đang tìm kiếm hoặc hủy chuyến xe đã được tài xế tiếp nhận dựa trên chính sách hủy chuyến của công ty. |
-| **Actor chính:** Khách hàng |
-| **Actor phụ:** Tài xế (nếu chuyến đã được nhận) |
-| **Tiền điều kiện (Pre-condition):** Khách hàng đã tạo một yêu cầu chuyến xe đang ở trạng thái MATCHING hoặc ACCEPTED. |
-| **Hậu điều kiện (Post-condition):** Chuyến xe được chuyển sang trạng thái đã hủy (CANCELLED) trong cơ sở dữ liệu, tài xế được giải phóng trạng thái hoạt động rảnh. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Khách hàng nhấn nút "Hủy chuyến đi" trên màn hình ứng dụng đặt xe. |  |
-|  | 2. Hệ thống truy vấn trạng thái hiện tại của chuyến xe và kiểm tra thời gian đã trôi qua kể từ khi tài xế nhận chuyến (nếu có). |
-|  | 3. Hệ thống xác nhận thời gian hủy chuyến hợp lệ (Trong vòng 3 phút kể từ khi tài xế nhận chuyến hoặc cuốc xe vẫn đang tìm tài xế). |
-|  | 4. Hệ thống cập nhật trạng thái của chuyến xe thành "Đã hủy" (CANCELLED) trong cơ sở dữ liệu. |
-|  | 5. Hệ thống gửi thông báo giải phóng cuốc xe đến Ứng dụng Tài xế của tài xế (nếu chuyến đã có tài xế nhận) để đưa tài xế về trạng thái ONLINE rảnh. |
-|  | 6. Hệ thống hiển thị thông báo hủy chuyến thành công không tính phí lên màn hình Khách hàng. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-|  | 3.1. Hệ thống kiểm tra phát hiện thời gian hủy chuyến đã vượt quá 3 phút kể từ khi tài xế bấm nhận chuyến. |
-|  | 3.2. Hệ thống hiển thị hộp thoại cảnh báo: "Hủy chuyến sau 3 phút sẽ bị tính phí phạt 10,000đ áp dụng vào chuyến đi tiếp theo theo chính sách. Bạn có chắc chắn muốn hủy?" kèm hai nút chọn "Đồng ý" và "Quay lại". |
-| 3.3. Khách hàng nhấn chọn "Đồng ý" để tiếp tục hủy chuyến. |  |
-|  | 3.4. Hệ thống ghi nhận phí phạt hủy chuyến vào tài khoản khách hàng, cập nhật trạng thái chuyến xe sang CANCELLED và thực hiện tiếp bước 5. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-| 3.1.1. Khách hàng nhấn chọn "Quay lại" tại hộp thoại cảnh báo phí phạt ở bước 3.2. |  |
-|  | 3.1.2. Hệ thống đóng hộp thoại cảnh báo, giữ nguyên tiến trình chuyến xe hiện tại và tiếp tục hiển thị màn hình theo dõi di chuyển của tài xế. Kết thúc usecase. |
-
----
-
-### 8.6. UC06 - THEO DÕI CHUYẾN ĐI
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC06 - Theo dõi chuyến đi |
-| **Mô tả sơ lược:** Cho phép Khách hàng theo dõi vị trí GPS di chuyển thời gian thực của tài xế và lộ trình chuyến đi trực quan trên bản đồ ứng dụng. |
-| **Actor chính:** Khách hàng |
-| **Actor phụ:** Tài xế |
-| **Tiền điều kiện (Pre-condition):** Chuyến xe đã được tài xế tiếp nhận thành công (ACCEPTED) hoặc đang trong tiến trình di chuyển (IN_TRANSIT). |
-| **Hậu điều kiện (Post-condition):** Tọa độ di chuyển thực tế của tài xế được đồng bộ liên tục đến màn hình bản đồ của khách hàng cho đến khi hoàn thành chuyến đi. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Khách hàng mở màn hình chi tiết chuyến đi hiện tại trên ứng dụng di động. |  |
-|  | 2. Hệ thống thiết lập kết nối luồng truyền dữ liệu thời gian thực (Websocket) giữa thiết bị Khách hàng và máy chủ. |
-| 3. Tài xế bật định vị GPS, Ứng dụng Tài xế tự động gửi tọa độ vị trí di chuyển định kỳ (mỗi 5 giây) về máy chủ. |  |
-|  | 4. Hệ thống tiếp nhận tọa độ GPS từ Ứng dụng Tài xế và đẩy dữ liệu tức thời qua kênh Websocket đến thiết bị của Khách hàng. |
-|  | 5. Hệ thống cập nhật biểu tượng di chuyển của tài xế và lộ trình vẽ trên bản đồ thời gian thực hiển thị cho Khách hàng. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-|  | 4.1. Hệ thống phát hiện mất kết nối Websocket tạm thời do thiết bị của Khách hàng di chuyển qua vùng sóng yếu. |
-|  | 4.2. Hệ thống hiển thị thông báo trạng thái: "Mất kết nối định vị. Đang kết nối lại..." và lưu trữ vị trí GPS cuối cùng được ghi nhận. |
-|  | 4.3. Hệ thống tự động thực hiện gửi lại yêu cầu kết nối lại Websocket khi sóng mạng phục hồi và tiếp tục bước 5. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 3.1. Ứng dụng của Tài xế đột ngột bị tắt nguồn hoặc mất kết nối mạng hoàn toàn khiến dữ liệu GPS không được gửi lên máy chủ quá 30 giây. |
-|  | 3.2. Hệ thống hiển thị cảnh báo lỗi định vị cho khách hàng: "Tạm thời mất tín hiệu GPS của tài xế. Lộ trình hiển thị có thể bị chậm." và giữ nguyên vị trí cũ. Kết thúc usecase. |
-
----
-
-### 8.7. UC07 - THANH TOÁN CHUYẾN ĐI
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC07 - Thanh toán chuyến đi |
-| **Mô tả sơ lược:** Xử lý khấu trừ cước phí tự động từ thẻ liên kết của khách hàng thông qua cổng thanh toán trực tuyến hoặc xác nhận hoàn tất thanh toán bằng tiền mặt. |
-| **Actor chính:** Khách hàng, Tài xế |
-| **Actor phụ:** Cổng thanh toán (Nhà cung cấp Thanh toán) |
-| **Tiền điều kiện (Pre-condition):** Chuyến đi đã được tài xế cập nhật trạng thái "Hoàn thành" (COMPLETED_TRIP) và hệ thống đã chốt giá cước thực tế. |
-| **Hậu điều kiện (Post-condition):** Giao dịch thanh toán được ghi nhận thành công trong CSDL, hệ thống cộng tiền vào tài khoản tài xế và đóng chuyến đi (COMPLETED). |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Tài xế nhấn nút "Hoàn thành chuyến đi" trên Ứng dụng Tài xế tại điểm đến. |  |
-|  | 2. Hệ thống tự động tính toán tổng cước phí thực tế dựa trên khoảng cách di chuyển thực tế ghi nhận qua GPS. |
-|  | 3. Hệ thống kiểm tra phương thức thanh toán Khách hàng đã chọn ban đầu là Thẻ trực tuyến liên kết (Ví dụ: Momo/VNPay). |
-|  | 4. Hệ thống gửi yêu cầu trừ tiền (Charge Request) qua Token bảo mật an toàn giao dịch đến API của Nhà cung cấp Thanh toán. |
-|  | 5. Nhà cung cấp Thanh toán xử lý giao dịch trừ tiền trên tài khoản khách hàng thành công và phản hồi mã giao dịch xác nhận (ACK). |
-|  | 6. Hệ thống cập nhật trạng thái chuyến xe thành "Đã hoàn thành và thanh toán" (COMPLETED), tự động cộng doanh thu sau khi trừ chiết khấu vào ví tích lũy của Tài xế. |
-|  | 7. Hệ thống hiển thị màn hình thông báo thanh toán thành công, gửi hóa đơn điện tử cho Khách hàng và bật màn hình đánh giá sao. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-|  | 3.1. Hệ thống kiểm tra phương thức thanh toán Khách hàng chọn là "Tiền mặt" (CASH). |
-|  | 3.2. Hệ thống hiển thị số tiền chính xác cần thu lên màn hình Ứng dụng Tài xế và gửi thông báo hiển thị số tiền cần trả lên app Khách hàng. |
-| 3.3. Khách hàng đưa tiền mặt trực tiếp cho Tài xế. |  |
-| 3.4. Tài xế nhận đủ tiền mặt và bấm nút "Xác nhận đã nhận đủ tiền mặt" trên ứng dụng. |  |
-|  | 3.5. Hệ thống ghi nhận giao dịch thanh toán tiền mặt thành công, cập nhật trạng thái chuyến xe thành COMPLETED và tiếp tục thực hiện bước 7. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 5.1. Nhà cung cấp Thanh toán phản hồi lỗi thanh toán trực tuyến thất bại (Ví dụ: Tài khoản khách hàng hết số dư, thẻ bị khóa, lỗi đường truyền cổng). |
-|  | 5.2. Hệ thống hiển thị thông báo lỗi thanh toán thẻ lên màn hình của Khách hàng, đồng thời **tự động chuyển đổi phương thức thanh toán của cuốc xe sang Tiền mặt**. |
-|  | 5.3. Hệ thống gửi cảnh báo khẩn cấp lên thiết bị của Tài xế: "Thanh toán thẻ lỗi. Vui lòng thu tiền mặt trực tiếp từ khách hàng: [Số tiền] VNĐ" để tài xế kịp thời thu tiền trước khi khách xuống xe. Kết thúc usecase. |
-
----
-
-### 8.8. UC08 - ĐÁNH GIÁ TÀI XẾ
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC08 - Đánh giá tài xế |
-| **Mô tả sơ lược:** Cho phép Khách hàng đánh giá mức độ hài lòng về chất lượng phục vụ của tài xế và phương tiện bằng số sao (1-5★) cùng ý kiến phản hồi sau khi hoàn thành chuyến đi. |
-| **Actor chính:** Khách hàng |
-| **Actor phụ:** Không có |
-| **Tiền điều kiện (Pre-condition):** Chuyến đi đã được hoàn thành thành công và thanh toán cước phí đầy đủ (Trạng thái COMPLETED). |
-| **Hậu điều kiện (Post-condition):** Đánh giá được lưu trữ vào cơ sở dữ liệu, hệ thống tự động tính toán lại điểm đánh giá trung bình của tài xế. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Khách hàng hoàn tất thanh toán, hệ thống tự động hiển thị màn hình "Đánh giá chuyến đi". |  |
-|  | 2. Hệ thống hiển thị giao diện chấm điểm bằng số sao (1 đến 5 sao) kèm biểu tượng và một ô văn bản để nhập ý kiến nhận xét (tùy chọn). |
-| 3. Khách hàng lựa chọn số sao (Ví dụ: 5 sao) đại diện cho mức độ hài lòng và viết nhận xét nếu muốn. |  |
-| 4. Khách hàng bấm nút "Gửi đánh giá". |  |
-|  | 5. Hệ thống tiếp nhận thông tin đánh giá, lưu bản ghi đánh giá chi tiết gắn liền với ID chuyến đi và ID tài xế vào cơ sở dữ liệu. |
-|  | 6. Hệ thống chạy thuật toán cập nhật lại điểm số đánh giá trung bình (Average Rating) của tài xế trong hồ sơ cá nhân. |
-|  | 7. Hệ thống hiển thị thông báo "Cảm ơn bạn đã đóng góp ý kiến" và tự động đóng màn hình đánh giá để đưa khách hàng về giao diện trang chủ. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-| 3.1. Khách hàng không có nhu cầu đánh giá và bấm chọn nút "Bỏ qua" trên góc màn hình. |  |
-|  | 3.2. Hệ thống bỏ qua ghi nhận đánh giá, đóng giao diện đánh giá chuyến đi và đưa khách hàng quay lại màn hình trang chủ. Kết thúc usecase. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 5.1. Khách hàng chấm điểm đánh giá thấp dưới 3 sao (1 hoặc 2 sao). |
-|  | 5.2. Hệ thống tự động hiển thị thêm một danh sách các lý do lỗi gợi ý (Ví dụ: Tài xế đi ẩu, xe không sạch sẽ, thái độ thiếu thân thiện, đi sai lộ trình...) để khách hàng tích chọn nhanh. |
-| 5.3. Khách hàng tích chọn các lý do phù hợp và nhấn "Gửi đánh giá". |  |
-|  | 5.4. Hệ thống lưu đánh giá, đồng thời **gắn cờ cảnh báo chất lượng (Flagged for Review)** cho bộ phận quản lý vận hành tự động xem xét xử lý tài xế vi phạm. Kết thúc usecase. |
-
----
-
-### 8.9. UC09 - XEM LỊCH SỬ CHUYẾN ĐI
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC09 - Xem lịch sử chuyến đi |
-| **Mô tả sơ lược:** Cho phép Khách hàng hoặc Đối tác Tài xế xem lại danh sách tất cả các chuyến đi đã thực hiện hoặc đã hủy kèm thông tin chi tiết của từng chuyến đi. |
-| **Actor chính:** Khách hàng, Tài xế |
-| **Actor phụ:** Không có |
-| **Tiền điều kiện (Pre-condition):** Người dùng đã đăng nhập thành công vào hệ thống. |
-| **Hậu điều kiện (Post-condition):** Hệ thống truy vấn và hiển thị danh sách các chuyến đi chính xác theo đúng lịch sử tài khoản của người dùng. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Người dùng vào mục "Cá nhân" và chọn chức năng "Lịch sử chuyến đi". |  |
-|  | 2. Hệ thống truy vấn cơ sở dữ liệu lấy danh sách các chuyến xe đã thực hiện gắn liền với ID người dùng, sắp xếp theo thứ tự thời gian mới nhất lên đầu. |
-|  | 3. Hệ thống hiển thị danh sách tóm tắt các chuyến đi, thông tin bao gồm: Thời gian, Điểm đi, Điểm đến, Giá cước, Loại xe, và Trạng thái chuyến đi. |
-| 4. Người dùng nhấn chọn vào một chuyến đi cụ thể trong danh sách để xem chi tiết. |  |
-|  | 5. Hệ thống hiển thị màn hình chi tiết chuyến đi bao gồm: Bản đồ vẽ lộ trình thực tế di chuyển, Tên tài xế/khách hàng, Biển số xe, Chi tiết thanh toán (Giá cước, khuyến mãi, phương thức thanh toán), và đánh giá sao (nếu có). Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-| 3.1. Người dùng chọn tính năng Lọc chuyến đi theo thời gian (ví dụ: "Tháng này", "Tháng trước") hoặc theo trạng thái (ví dụ: "Đã hoàn thành", "Đã hủy"). |  |
-|  | 3.2. Hệ thống tiếp nhận tiêu chí lọc, thực hiện lọc dữ liệu trong cơ sở dữ liệu và hiển thị danh sách kết quả phù hợp. Người dùng quay lại bước 4. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 2.1. Hệ thống truy vấn cơ sở dữ liệu và ghi nhận người dùng này chưa thực hiện bất kỳ chuyến xe nào trong lịch sử. |
-|  | 2.2. Hệ thống hiển thị màn hình trống kèm thông báo thân thiện: "Bạn chưa thực hiện chuyến đi nào cùng CAB System. Hãy đặt chuyến xe đầu tiên ngay nhé!" Kết thúc usecase. |
-
----
-
-### 8.10. UC10 - ĐĂNG KÝ HỒ SƠ & PHƯƠNG TIỆN
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC10 - Đăng ký hồ sơ & phương tiện |
-| **Mô tả sơ lược:** Cho phép các tài xế mới đăng ký thông tin hồ sơ cá nhân và thông tin phương tiện di chuyển (biển số, loại xe, chứng từ bảo hiểm) lên hệ thống để chờ phê duyệt hoạt động. |
-| **Actor chính:** Tài xế |
-| **Actor phụ:** Không có |
-| **Tiền điều kiện (Pre-condition):** Tài xế đã đăng ký tài khoản thành công nhưng tài khoản chưa được kích hoạt cho phép nhận chuyến. |
-| **Hậu điều kiện (Post-condition):** Hồ sơ đăng ký của tài xế được tạo lập thành công trong CSDL ở trạng thái "Chờ phê duyệt" (PENDING_APPROVAL). |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Tài xế đăng nhập vào ứng dụng dành cho tài xế và chọn nút "Đăng ký hồ sơ đối tác". |  |
-|  | 2. Hệ thống hiển thị biểu mẫu đăng ký hồ sơ gồm các phần: Thông tin cá nhân (Giấy phép lái xe, CCCD), Thông tin xe (Hãng xe, Biển số xe, Màu xe, Số khung), và lựa chọn loại hình dịch vụ hoạt động (CAB_BIKE hoặc CAB_CAR). |
-| 3. Tài xế điền đầy đủ thông tin vào các trường nhập liệu, chụp và tải lên ảnh chân dung, ảnh chụp Giấy phép lái xe và Đăng ký xe. |  |
-| 4. Tài xế nhấn nút "Gửi hồ sơ". |  |
-|  | 5. Hệ thống kiểm tra tính đầy đủ của các tệp ảnh tài liệu đính kèm và kiểm tra tính hợp lệ của định dạng văn bản nhập vào. |
-|  | 6. Hệ thống lưu trữ hồ sơ tài xế và phương tiện vào cơ sở dữ liệu, đặt trạng thái tài khoản là PENDING_APPROVAL. |
-|  | 7. Hệ thống hiển thị màn hình thông báo: "Hồ sơ của bạn đã được gửi thành công và đang được xét duyệt trong vòng 24 giờ làm việc." Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-|  | 5.1. Hệ thống kiểm tra phát hiện thông tin nhập vào bị trống ở các trường bắt buộc hoặc ảnh tải lên không đúng định dạng cho phép (PNG/JPG). |
-|  | 5.2. Hệ thống đánh dấu đỏ các trường bị thiếu/lỗi và hiển thị cảnh báo: "Vui lòng cung cấp đầy đủ thông tin và hình ảnh chứng từ hợp lệ." |
-| 5.3. Tài xế bổ sung các thông tin còn thiếu và quay lại bước 4. |  |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 5.4. Hệ thống kiểm tra phát hiện Biển số xe nhập vào trùng khớp với một phương tiện khác đang hoạt động tích cực trên hệ thống. |
-|  | 5.5. Hệ thống từ chối đăng ký và hiển thị cảnh báo lỗi: "Biển số xe này đã được đăng ký bởi một đối tác tài xế khác. Vui lòng kiểm tra lại hoặc liên hệ hotline." Kết thúc usecase. |
-
----
-
-### 8.11. UC11 - BẬT / TĂNG TRẠNG THÁI HOẠT ĐỘNG
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC11 - Bật / Tắt trạng thái hoạt động |
-| **Mô tả sơ lược:** Cho phép đối tác tài xế gạt nút chuyển đổi trạng thái làm việc sang ONLINE (Trực tuyến để nhận cuốc xe) hoặc OFFLINE (Ngoại tuyến để nghỉ ngơi). |
-| **Actor chính:** Tài xế |
-| **Actor phụ:** Không có |
-| **Tiền điều kiện (Pre-condition):** Tài xế đã đăng nhập thành công vào Ứng dụng Tài xế và tài khoản đã được phê duyệt ở trạng thái hoạt động (ACTIVE). |
-| **Hậu điều kiện (Post-condition):** Trạng thái hoạt động của tài xế được cập nhật trên máy chủ điều phối để bắt đầu/dừng nhận yêu cầu cuốc xe mới. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Tài xế gạt nút công tắc trên giao diện chính sang trạng thái "ONLINE" (Trực tuyến). |  |
-|  | 2. Hệ thống kiểm tra quyền hạn hoạt động của tài khoản tài xế (kiểm tra trạng thái phê duyệt hồ sơ và số dư tài khoản tối thiểu). |
-|  | 3. Hệ thống cập nhật trạng thái hoạt động của tài xế sang ONLINE trong bộ nhớ đệm điều phối thời gian thực (In-Memory Dispatcher Cache). |
-|  | 4. Hệ thống thiết lập kết nối truyền dữ liệu tọa độ GPS liên tục từ thiết bị tài xế lên máy chủ. |
-|  | 5. Hệ thống hiển thị màn hình bản đồ trực tuyến và thông báo bằng giọng nói: "Bạn đang trực tuyến, chúc bạn có những chuyến đi an toàn." Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-| 1.1. Tài xế đang ở trạng thái trực tuyến và gạt nút công tắc về vị trí "OFFLINE" (Ngoại tuyến). |  |
-|  | 1.2. Hệ thống thực hiện ngắt kết nối theo dõi vị trí GPS, loại bỏ tài xế khỏi danh sách quét tìm xe của thuật toán điều phối. |
-|  | 1.3. Hệ thống cập nhật trạng thái tài xế sang OFFLINE trong cơ sở dữ liệu và hiển thị thông báo: "Bạn đang ngoại tuyến. Hệ thống sẽ ngừng phát cuốc xe." Kết thúc usecase. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 2.1. Hệ thống phát hiện tài khoản tài xế đang bị khóa (LOCKED) hoặc số dư tài khoản ký quỹ hiện dưới mức tối thiểu quy định. |
-|  | 2.2. Hệ thống từ chối cho phép bật trực tuyến, hiển thị thông báo lỗi cụ thể: "Tài khoản không đủ điều kiện trực tuyến. Vui lòng nạp tiền vào ví hoặc liên hệ tổng đài." Kết thúc usecase. |
-
----
-
-### 8.12. UC12 - TIẾP NHẬN CHUYẾN XE
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC12 - Tiếp nhận chuyến xe |
-| **Mô tả sơ lược:** Cho phép đối tác tài xế nhấn đồng ý tiếp nhận cuốc xe do hệ thống tự động phân phối gửi đến thiết bị trong thời gian đếm ngược quy định. |
-| **Actor chính:** Tài xế |
-| **Actor phụ:** Khách hàng |
-| **Tiền điều kiện (Pre-condition):** Tài xế đang trực tuyến (ONLINE), hệ thống quét tìm và gửi yêu cầu cuốc xe mới đến thiết bị tài xế. |
-| **Hậu điều kiện (Post-condition):** Chuyến xe được cập nhật trạng thái sang ACCEPTED, tài xế được khóa vào cuốc xe này và chuyển sang luồng di chuyển đến đón khách. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-|  | 1. Hệ thống phát ra âm thanh cảnh báo đặc trưng và hiển thị màn hình yêu cầu cuốc xe mới trên thiết bị của Tài xế, bao gồm thông tin: Điểm đón, Điểm trả, Giá cước, Lộ trình dự kiến và bộ đếm ngược 30 giây. |
-| 2. Tài xế xem thông tin chuyến đi và nhấn nút "Chấp nhận" trước khi bộ đếm ngược kết thúc. |  |
-|  | 3. Hệ thống ghi nhận phản hồi, khóa cuốc xe này với tài xế hiện tại để tránh phân phối trùng. |
-|  | 4. Hệ thống cập nhật trạng thái chuyến đi thành "Đã nhận chuyến" (ACCEPTED) trong cơ sở dữ liệu. |
-|  | 5. Hệ thống gửi thông báo đẩy đến Khách hàng: "Tài xế [Tên tài xế] đã nhận chuyến và đang di chuyển đến đón bạn" kèm thông tin liên lạc và biển số xe của tài xế. |
-|  | 6. Hệ thống hiển thị bản đồ dẫn đường thời gian thực chỉ dẫn tài xế di chuyển từ vị trí hiện tại đến điểm đón khách hàng. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-|  | 2.1. Bộ đếm ngược 30 giây kết thúc mà tài xế không nhấn nút phản hồi hoặc tài xế chủ động bấm nút "Bỏ qua" chuyến xe. |
-|  | 2.2. Hệ thống tự động thu hồi cuốc xe trên thiết bị của tài xế này, ghi nhận một lượt từ chối để cập nhật hiệu suất nhận chuyến (Accept Rate) của tài xế. |
-|  | 2.3. Hệ thống gọi tiếp UC13 để tự động điều chuyển cuốc xe đến tài xế ưu tiên tiếp theo. Kết thúc usecase. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 2.1.1. Khách hàng thực hiện hủy chuyến đi ngay trong khoảng thời gian đếm ngược trước khi tài xế bấm nút Chấp nhận. |
-| 2.1.2. Tài xế bấm nút "Chấp nhận" ngay sau khi chuyến đi vừa bị hủy. |  |
-|  | 2.1.3. Hệ thống hiển thị thông báo cảnh báo lỗi trên thiết bị tài xế: "Rất tiếc, Khách hàng đã hủy yêu cầu đặt xe này." và đóng màn hình nhận chuyến để đưa tài xế về màn hình trực tuyến rảnh. Kết thúc usecase. |
-
----
-
-### 8.13. UC13 - TỪ CHỐI CHUYẾN XE
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC13 - Từ chối chuyến xe |
-| **Mô tả sơ lược:** Cho phép đối tác tài xế chủ động nhấn từ chối tiếp nhận cuốc xe không phù hợp; hệ thống sẽ tự động chuyển giao yêu cầu cho đối tác tài xế khác. |
-| **Actor chính:** Tài xế |
-| **Actor phụ:** Không có |
-| **Tiền điều kiện (Pre-condition):** Yêu cầu cuốc xe mới đang được hiển thị đếm ngược trên Ứng dụng Tài xế của tài xế. |
-| **Hậu điều kiện (Post-condition):** Tài xế bị loại khỏi lượt điều phối hiện tại của cuốc xe đó; cuốc xe tiếp tục được đẩy sang ứng viên rảnh phù hợp kế tiếp. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Tài xế nhận được tín hiệu cuốc xe mới và nhấn chọn nút "Từ chối" (REJECT) trên giao diện. |  |
-|  | 2. Hệ thống lập tức thu hồi màn hình yêu cầu cuốc xe trên thiết bị của tài xế này. |
-|  | 3. Hệ thống lưu vết sự kiện tài xế từ chối cuốc xe để phục vụ tính chỉ số hiệu suất nhận chuyến cuối ngày. |
-|  | 4. Hệ thống chạy thuật toán điều phối để quét, lựa chọn và gửi yêu cầu cuốc xe này đến tài xế ưu tiên tiếp theo trong danh sách ứng viên rảnh gần khách hàng nhất. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-|  | 4.1. Hệ thống thực hiện quét tìm các tài xế rảnh khác trong bán kính cơ bản (2km) nhưng không còn tài xế nào khả dụng. |
-|  | 4.2. Hệ thống tự động mở rộng bán kính tìm kiếm lên 5km và thực hiện gửi tín hiệu cuốc xe đến các tài xế trong vùng mở rộng. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 4.1.1. Sau khi quét hết bán kính mở rộng tối đa và hết thời gian chờ của cuốc xe mà không tìm được bất kỳ tài xế nào tiếp nhận. |
-|  | 4.1.2. Hệ thống tự động hủy cuốc xe, cập nhật trạng thái thành CANCELLED_NO_DRIVER và gửi thông báo lỗi xin lỗi khách hàng. Kết thúc usecase. |
-
----
-
-### 8.14. UC14 - CẬP NHẬT TIẾN TRÌNH CHUYẾN ĐI
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC14 - Cập nhật tiến trình chuyến đi |
-| **Mô tả sơ lược:** Cho phép đối tác tài xế cập nhật tuần tự các mốc trạng thái vận hành thực tế của chuyến xe từ lúc đến điểm đón, bắt đầu di chuyển cho đến khi trả khách an toàn. |
-| **Actor chính:** Tài xế |
-| **Actor phụ:** Khách hàng |
-| **Tiền điều kiện (Pre-condition):** Chuyến xe đang ở trạng thái "Đã nhận chuyến" (ACCEPTED). |
-| **Hậu điều kiện (Post-condition):** Trạng thái cuốc xe cập nhật tuần tự và dừng ở PAYMENT_PENDING để thực hiện tính toán cước phí và thanh toán. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Tài xế di chuyển đến vị trí đón, nhấn chọn nút "Đã đến điểm đón" trên ứng dụng. |  |
-|  | 2. Hệ thống cập nhật trạng thái chuyến đi thành DRIVER_ARRIVED và gửi thông báo đẩy đến Khách hàng: "Tài xế đã đến điểm đón. Vui lòng chuẩn bị di chuyển ra xe." |
-| 3. Khách hàng lên phương tiện di chuyển, tài xế nhấn chọn nút "Bắt đầu chuyến đi". |  |
-|  | 4. Hệ thống cập nhật trạng thái chuyến đi sang IN_TRANSIT, bật cơ chế đồng bộ GPS liên tục và hiển thị bản đồ dẫn đường dẫn đến "Điểm đến". |
-| 5. Tài xế đưa khách hàng đến đúng vị trí điểm trả khách, nhấn chọn nút "Hoàn thành chuyến đi". |  |
-|  | 6. Hệ thống chốt tọa độ GPS điểm kết thúc, gọi phân hệ tính cước (Fare Engine) chốt số tiền cước thực tế cuối cùng dựa trên lộ trình di chuyển thực tế. |
-|  | 7. Hệ thống cập nhật trạng thái chuyến đi sang "Chờ thanh toán" (PAYMENT_PENDING) và tự động kích hoạt luồng xử lý thanh toán (UC07). Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-| 3.1. Khách hàng không xuất hiện tại điểm đón quá 10 phút kể từ khi tài xế bấm "Đã đến điểm đón". |  |
-| 3.2. Tài xế thực hiện nhấn nút "Hủy chuyến - Khách không đến". |  |
-|  | 3.3. Hệ thống kiểm tra thời gian chờ thực tế, hủy cuốc xe với trạng thái CANCELLED_NO_SHOW, giải phóng tài xế về ONLINE và tự động áp dụng phí phạt chờ xe lên tài khoản khách hàng. Kết thúc usecase. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-| 1.1. Điện thoại của tài xế đột ngột mất kết nối mạng di động hoàn toàn (mất 4G) khi đang di chuyển trên lộ trình. |  |
-|  | 1.2. Hệ thống ghi nhận gián đoạn tín hiệu Websocket trên máy chủ, Ứng dụng Tài xế tự động chuyển sang chế độ **Lưu dữ liệu offline local**. |
-| 1.3. Ứng dụng Tài xế sử dụng cảm biến phần cứng của thiết bị để tiếp tục ghi nhận lưu tọa độ GPS các mốc đi qua lưu trữ tạm thời trong bộ nhớ đệm điện thoại. |  |
-| 1.4. Thiết bị phục hồi sóng mạng di động, Ứng dụng Tài xế tự động đồng bộ gửi toàn bộ chuỗi dữ liệu tọa độ offline lên máy chủ. |  |
-|  | 1.5. Hệ thống tiếp nhận dữ liệu đồng bộ, tính toán chính xác quãng đường di chuyển thực tế và cập nhật lại lộ trình chính xác trên máy chủ. Kết thúc usecase. |
-
----
-
-### 8.15. UC15 - QUẢN LÝ NGƯỜI DÙNG & DUYỆT TÀI XẾ
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC15 - Quản lý người dùng & Duyệt tài xế |
-| **Mô tả sơ lược:** Cho phép Nhân viên Vận hành phê duyệt hồ sơ đăng ký của tài xế mới hoặc thực hiện khóa/mở khóa tài khoản khách hàng/tài xế vi phạm thông qua trang quản trị Trang quản trị Web. |
-| **Actor chính:** Nhân viên Vận hành |
-| **Actor phụ:** Tài xế (người được duyệt/khóa) |
-| **Tiền điều kiện (Pre-condition):** Nhân viên Vận hành đã đăng nhập thành công vào hệ thống Trang quản trị Web với quyền quản trị phù hợp. |
-| **Hậu điều kiện (Post-condition):** Trạng thái tài khoản người dùng được cập nhật thành công trong CSDL (Ví dụ: ACTIVE, LOCKED). |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Nhân viên Vận hành truy cập mục "Phê duyệt đối tác tài xế" trên trang quản trị Trang quản trị Web. |  |
-|  | 2. Hệ thống hiển thị danh sách các hồ sơ tài xế mới đang chờ duyệt ở trạng thái PENDING_APPROVAL. |
-| 3. Nhân viên Vận hành nhấn chọn một hồ sơ cụ thể để xem chi tiết thông tin và hình ảnh chứng từ đính kèm. |  |
-|  | 4. Hệ thống hiển thị đầy đủ thông tin cá nhân, ảnh CCCD, ảnh Giấy phép lái xe và ảnh đăng ký phương tiện của tài xế đó. |
-| 5. Nhân viên Vận hành đối chiếu thông tin hợp lệ, hợp chuẩn và nhấn nút "Phê duyệt". |  |
-|  | 6. Hệ thống thực hiện cập nhật trạng thái tài khoản tài xế thành hoạt động (ACTIVE) trong cơ sở dữ liệu. |
-|  | 7. Hệ thống tự động gửi thông báo đẩy và email kích hoạt tài khoản thành công đến thiết bị của Tài xế. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-| 5.1. Nhân viên Vận hành phát hiện hồ sơ tài xế bị thiếu chứng từ hoặc thông tin mờ không rõ ràng, nhấn chọn nút "Từ chối duyệt". |  |
-|  | 5.2. Hệ thống hiển thị biểu mẫu yêu cầu nhập lý do từ chối phê duyệt. |
-| 5.3. Nhân viên Vận hành nhập lý do chi tiết (Ví dụ: "Ảnh Giấy phép lái xe bị mờ, vui lòng chụp lại rõ nét") và bấm nút "Xác nhận từ chối". |  |
-|  | 5.4. Hệ thống cập nhật trạng thái hồ sơ tài xế thành REJECTED và gửi tin nhắn thông báo lý do chi tiết đến SĐT tài xế để đối tác chỉnh sửa và gửi lại. Kết thúc usecase. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-| 5.1.1. Nhân viên Vận hành phát hiện tài khoản người dùng hoạt động có hành vi gian lận hoặc vi phạm chính sách nghiêm trọng, nhấn nút "Khóa tài khoản". |  |
-|  | 5.1.2. Hệ thống hiển thị thông báo xác nhận và yêu cầu nhập lý do khóa tài khoản. |
-| 5.1.3. Nhân viên Vận hành nhập lý do khóa và xác nhận đồng ý. |  |
-|  | 5.1.4. Hệ thống cập nhật trạng thái tài khoản thành LOCKED, ngắt toàn bộ phiên làm việc (JWT) hiện tại của tài khoản đó để đăng xuất người dùng lập tức. Kết thúc usecase. |
-
----
-
-### 8.16. UC16 - GIÁM SÁT & CAN THIỆP SỰ CỐ
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC16 - Giám sát & Can thiệp sự cố |
-| **Mô tả sơ lược:** Cho phép Nhân viên Vận hành theo dõi trực quan các chuyến đi đang hoạt động và thực hiện can thiệp khẩn cấp (Hủy chuyến, đổi tài xế) khi có sự cố phát sinh. |
-| **Actor chính:** Nhân viên Vận hành |
-| **Actor phụ:** Khách hàng, Tài xế |
-| **Tiền điều kiện (Pre-condition):** Nhân viên Vận hành đã đăng nhập thành công vào trang quản trị Trang quản trị Web. |
-| **Hậu điều kiện (Post-condition):** Chuyến xe gặp sự cố được can thiệp trạng thái an toàn trong CSDL, thông báo được gửi đến các bên liên quan. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Nhân viên Vận hành truy cập chức năng "Bản đồ giám sát chuyến đi" trên Trang quản trị Web. |  |
-|  | 2. Hệ thống hiển thị bản đồ trực quan với các biểu tượng chuyến đi đang di chuyển thời gian thực; các chuyến xe có cảnh báo bất thường (Dừng lâu, lệch lộ trình, hoặc bấm nút khẩn cấp SOS) được tô màu đỏ nổi bật. |
-| 3. Nhân viên Vận hành nhấn chọn vào một chuyến xe có cảnh báo màu đỏ để xem thông tin chi tiết. |  |
-|  | 4. Hệ thống hiển thị hộp thoại thông tin gồm: Họ tên SĐT khách hàng/tài xế, loại xe, lộ trình di chuyển, và vị trí GPS hiện tại. |
-| 5. Nhân viên Vận hành thực hiện cuộc gọi liên hệ khẩn cấp xác minh tình hình thực tế với tài xế và khách hàng. |  |
-| 6. Nhân viên Vận hành xác nhận sự cố nghiêm trọng không thể tiếp tục hành trình và nhấn nút "Hủy chuyến khẩn cấp". |  |
-|  | 7. Hệ thống thực hiện cập nhật trạng thái chuyến đi thành CANCELLED_BY_ADMIN, ghi nhận sự cố, giải phóng tài xế về ONLINE và hoàn trả tiền giao dịch thẻ (nếu có) cho khách hàng. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow):** |  |
-| 6.1. Chuyến xe bị hỏng hóc dọc đường nhưng hành khách vẫn muốn tiếp tục di chuyển, Nhân viên Vận hành nhấn nút "Điều phối lại tài xế". |  |
-|  | 6.2. Hệ thống hiển thị danh sách các tài xế rảnh gần vị trí sự cố nhất. |
-| 6.3. Nhân viên Vận hành chọn một tài xế mới từ danh sách và nhấn "Xác nhận đổi tài xế". |  |
-|  | 6.4. Hệ thống thu hồi chuyến đi cũ, gán ID tài xế mới vào chuyến đi, cập nhật trạng thái về ACCEPTED và gửi định vị dẫn đường tài xế mới đến đón khách. Kết thúc usecase. |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 7.1. Hệ thống kiểm tra thấy chuyến xe đã hoàn thành (Trạng thái COMPLETED) ngay trước khi Nhân viên Vận hành bấm nút can thiệp khẩn cấp. |
-|  | 7.2. Hệ thống hiển thị thông báo từ chối: "Chuyến đi đã kết thúc thành công. Không thể thực hiện can thiệp hành chính." Kết thúc usecase. |
-
----
-
-### 8.17. UC17 - XEM BÁO CÁO THỐNG KÊ
-
-| Đặc tả Use Case |
-| :--- |
-| **Tên use case:** UC17 - Xem báo cáo thống kê |
-| **Mô tả sơ lược:** Cho phép Ban lãnh đạo truy cập dashboard Trang quản trị Web để theo dõi các chỉ số KPI vận hành, doanh thu kinh doanh và xuất các báo cáo thống kê định dạng file Excel. |
-| **Actor chính:** Ban lãnh đạo |
-| **Actor phụ:** Không có |
-| **Tiền điều kiện (Pre-condition):** Ban lãnh đạo đã đăng nhập thành công vào Trang quản trị Web với đặc quyền quản trị cấp cao. |
-| **Hậu điều kiện (Post-condition):** Hệ thống hiển thị trực quan các số liệu KPI báo cáo và cho phép tải xuống file Excel chứa số liệu chi tiết. |
-
-| **Actor** | **System** |
-| :--- | :--- |
-| **Luồng sự kiện chính (main flow):** |  |
-| 1. Ban lãnh đạo chọn mục "Báo cáo thống kê" trên thanh điều hướng Trang quản trị Web. |  |
-|  | 2. Hệ thống tải trang và hiển thị các bảng đồ thị biểu diễn chỉ số vận hành cốt lõi: Tổng doanh thu, Tổng số chuyến xe, Tỷ lệ hoàn thành, Tỷ lệ hủy, và Hiệu suất trung bình của tài xế. |
-| 3. Ban lãnh đạo lựa chọn khoảng thời gian cần thống kê (Ví dụ: Từ ngày 01/08/2026 đến ngày 15/08/2026) và chọn bộ lọc theo loại dịch vụ. |  |
-|  | 4. Hệ thống thực hiện tổng hợp dữ liệu, chạy các hàm tính toán thống kê và cập nhật các biểu đồ trực quan tương ứng với thời gian đã lọc. |
-| 5. Ban lãnh đạo nhấn nút "Xuất báo cáo Excel". |  |
-|  | 6. Hệ thống thực hiện xuất các bảng số liệu chi tiết thành một tệp tin định dạng Excel (.xlsx) chuẩn bảo mật. |
-|  | 7. Hệ thống tự động kích hoạt tiến trình tải xuống tệp tin báo cáo Excel về thiết bị của người dùng. Kết thúc usecase. |
-| **Luồng sự kiện thay thế (alternate flow): Không có** |  |
-| **Luồng sự kiện ngoại lệ (exception flow):** |  |
-|  | 4.1. Hệ thống kiểm tra thấy khoảng thời gian Ban lãnh đạo chọn lọc dữ liệu quá rộng (Ví dụ: Trên 1 năm) gây nguy cơ treo luồng xử lý hoặc quá tải truy vấn CSDL. |
-|  | 4.2. Hệ thống hiển thị hộp thoại cảnh báo: "Thời gian truy vấn quá lớn. Vui lòng chọn khoảng thời gian dưới 3 tháng hoặc thực hiện xuất báo cáo định kỳ." và đưa khoảng lọc về mặc định. Kết thúc usecase. |
+### 1. Đặc tả use case "Đăng ký tài khoản" (UC01)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Đăng ký tài khoản (UC01)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Khách hàng chưa có tài khoản trên hệ thống và thiết bị di động có kết nối Internet.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Tài khoản Khách hàng mới được khởi tạo ở trạng thái ACTIVE trong cơ sở dữ liệu và tự động đăng nhập vào ứng dụng.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Khách hàng</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Nhà cung cấp Thông báo (Cổng SMS Gateway)</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Khách hàng</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Mở ứng dụng CAB System trên điện thoại và chọn chức năng "Đăng ký tài khoản"</td>
+        <td style="padding: 8px;">2. Kiểm tra trạng thái ứng dụng. Hiển thị biểu mẫu đăng ký yêu cầu nhập các thông tin: Họ và tên, Số điện thoại, Email (tùy chọn), Mật khẩu và Xác nhận mật khẩu</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Nhập đầy đủ thông tin đăng ký theo yêu cầu trên biểu mẫu</td>
+        <td style="padding: 8px;"></td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">4. Nhấn nút "Tiếp tục" để gửi thông tin đăng ký</td>
+        <td style="padding: 8px;">5. Kiểm tra tính hợp lệ của dữ liệu: định dạng số điện thoại chuẩn, tra cứu CSDL đảm bảo Số điện thoại chưa được đăng ký trước đó, mật khẩu khớp với xác nhận và đạt độ dài an toàn (≥ 8 ký tự)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">6. Gọi API sang Nhà cung cấp Thông báo (SMS Gateway) để gửi mã xác thực OTP (6 chữ số) đến số điện thoại vừa đăng ký</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Hiển thị màn hình nhập mã OTP kèm bộ đếm ngược thời gian hiệu lực 120 giây</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">8. Nhập mã OTP nhận được từ tin nhắn SMS và nhấn nút "Xác nhận kích hoạt"</td>
+        <td style="padding: 8px;">9. Kiểm tra tính chính xác và thời hạn hiệu lực của mã OTP đối chiếu với dữ liệu trên hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">10. Tiến hành băm mật khẩu (bcrypt), tạo bản ghi tài khoản người dùng mới vào Database với trạng thái "Hoạt động" (ACTIVE) và phân quyền vai trò Khách hàng</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">11. Tự động khởi tạo phiên đăng nhập (sinh cặp JWT Token), hiển thị thông báo đăng ký thành công và điều hướng khách hàng vào màn hình chính đặt xe</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>4.1. Số điện thoại đã tồn tại trong hệ thống</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện Số điện thoại đã tồn tại trong CSDL của một tài khoản khác.<br>
+                2. Dừng luồng đăng ký, hiển thị thông báo lỗi: "Số điện thoại này đã được sử dụng. Vui lòng đăng nhập hoặc dùng số khác."<br>
+                3. Quay lại bước 3 của Basic flow để khách hàng nhập lại số điện thoại hoặc chọn chuyển sang Đăng nhập.
+            </p>
+            <p><strong>8.1. Khách hàng yêu cầu gửi lại mã OTP</strong></p>
+            <p style="margin-left: 20px;">
+                1. Khách hàng chưa nhận được mã SMS hoặc mã OTP đã quá hạn 120 giây, nhấn nút "Gửi lại mã OTP".<br>
+                2. Hệ thống tạo mã OTP ngẫu nhiên mới và gọi API Cổng SMS gửi lại đến số điện thoại khách hàng.<br>
+                3. Thiết lập lại bộ đếm ngược 120 giây trên màn hình và quay lại bước 8 của Basic flow.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>5.1. Dữ liệu đăng ký không hợp lệ hoặc thiếu thông tin bắt buộc</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện số điện thoại sai định dạng hoặc mật khẩu dưới 8 ký tự hoặc mật khẩu xác nhận không khớp.<br>
+                2. Hệ thống dừng quy trình, bôi đỏ các trường dữ liệu không hợp lệ kèm thông báo lỗi chi tiết tương ứng.<br>
+                3. Quay lại bước 3 của Basic flow.
+            </p>
+            <p><strong>6.1. Lỗi kết nối Cổng tin nhắn SMS</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống không thể kết nối tới máy chủ SMS Gateway do lỗi đường truyền hoặc nhà mạng quá tải.<br>
+                2. Hệ thống hiển thị cảnh báo: "Dịch vụ gửi mã xác thực đang gặp sự cố. Vui lòng thử lại sau ít phút."<br>
+                3. Giữ nguyên thông tin trên biểu mẫu để khách hàng không phải nhập lại từ đầu.
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 2. Đặc tả use case "Đăng nhập hệ thống" (UC02)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Đăng nhập hệ thống (UC02)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Người dùng đã có tài khoản tồn tại trong cơ sở dữ liệu hệ thống.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Hệ thống cấp phát cặp Token xác thực (JWT), ghi log đăng nhập và điều hướng người dùng đến giao diện phân quyền tương ứng.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Khách hàng, Tài xế, Nhân viên Vận hành, Ban lãnh đạo</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Người dùng</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Mở ứng dụng di động hoặc truy cập Cổng thông tin Quản trị Web và chọn chức năng "Đăng nhập"</td>
+        <td style="padding: 8px;">2. Hiển thị biểu mẫu đăng nhập yêu cầu cung cấp Số điện thoại (hoặc Tên đăng nhập) và Mật khẩu</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Nhập Số điện thoại và Mật khẩu vào các trường tương ứng trên biểu mẫu</td>
+        <td style="padding: 8px;"></td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">4. Nhấn nút "Đăng nhập"</td>
+        <td style="padding: 8px;">5. Kiểm tra và đối chiếu thông tin đăng nhập: tra cứu số điện thoại trong cơ sở dữ liệu và kiểm tra tính trùng khớp của mật khẩu đã được mã hóa</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">6. Kiểm tra trạng thái hoạt động của tài khoản: đảm bảo tài khoản đang ở trạng thái ACTIVE (không bị khóa hay tạm ngừng)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Tạo phiên làm việc mới, phát sinh cặp JWT Token (Access Token chứa vai trò người dùng và Refresh Token) lưu vào phiên bảo mật</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">8. Ghi nhận thời gian đăng nhập vào bảng nhật ký (Audit Log), hiển thị thông báo thành công và điều hướng người dùng đến màn hình tương ứng theo vai trò (Khách hàng vào Bản đồ đặt xe; Tài xế vào Bảng điều khiển nhận cuốc; Vận hành / Lãnh đạo vào Giao diện Quản trị Web)</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>3.1. Người dùng chọn chức năng "Quên mật khẩu"</strong></p>
+            <p style="margin-left: 20px;">
+                1. Người dùng nhấn nút "Quên mật khẩu" trên biểu mẫu đăng nhập.<br>
+                2. Hệ thống hiển thị form yêu cầu nhập Số điện thoại đã đăng ký.<br>
+                3. Người dùng nhập số điện thoại và xác nhận gửi OTP.<br>
+                4. Hệ thống kiểm tra, gửi mã OTP qua SMS; sau khi xác thực OTP thành công, cho phép người dùng thiết lập mật khẩu mới.<br>
+                5. Quay lại bước 1 của Basic flow để đăng nhập bằng mật khẩu mới.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>5.1. Sai số điện thoại hoặc mật khẩu không chính xác</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống không tìm thấy số điện thoại trong CSDL hoặc mật khẩu không khớp với bản băm bcrypt.<br>
+                2. Hệ thống dừng đăng nhập, hiển thị thông báo: "Số điện thoại hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại."<br>
+                3. Quay lại bước 3 của Basic flow để người dùng nhập lại.
+            </p>
+            <p><strong>6.1. Tài khoản đang trong trạng thái bị khóa (LOCKED / SUSPENDED)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện tài khoản có trạng thái là LOCKED do vi phạm chính sách vận hành.<br>
+                2. Hệ thống từ chối đăng nhập và hiển thị thông báo: "Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ bộ phận hỗ trợ để được giải quyết."
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 3. Đặc tả use case "Cập nhật thông tin cá nhân" (UC03)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Cập nhật thông tin cá nhân (UC03)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Người dùng đã đăng nhập thành công vào hệ thống.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Dữ liệu hồ sơ người dùng được cập nhật mới vào cơ sở dữ liệu.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Khách hàng, Tài xế, Nhân viên Vận hành, Ban lãnh đạo</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Người dùng</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Chọn mục "Tài khoản" trên thanh điều hướng và bấm vào chức năng "Thông tin cá nhân"</td>
+        <td style="padding: 8px;">2. Truy vấn cơ sở dữ liệu và hiển thị chi tiết hồ sơ hiện tại của người dùng gồm: Ảnh đại diện, Họ và tên, Số điện thoại (chỉ xem, không được tự ý sửa), Địa chỉ Email và Ngày tham gia</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Chỉnh sửa Họ tên, Email hoặc chọn tải lên ảnh đại diện mới từ thiết bị</td>
+        <td style="padding: 8px;"></td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">4. Nhấn nút "Lưu thay đổi"</td>
+        <td style="padding: 8px;">5. Kiểm tra và đánh giá tính hợp lệ của dữ liệu: đảm bảo Họ tên không rỗng, định dạng Email đúng chuẩn, Email mới (nếu sửa) chưa được dùng bởi tài khoản khác, và tệp ảnh đại diện có dung lượng ≤ 5MB</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">6. Thực hiện lệnh cập nhật (UPDATE) thông tin người dùng vào cơ sở dữ liệu</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Hiển thị thông báo "Cập nhật hồ sơ cá nhân thành công" và làm mới giao diện với thông tin mới nhất</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>1.1. Người dùng thực hiện Đổi mật khẩu tài khoản</strong></p>
+            <p style="margin-left: 20px;">
+                1. Tại màn hình Tài khoản, người dùng nhấn chọn chức năng "Đổi mật khẩu".<br>
+                2. Hệ thống hiển thị biểu mẫu yêu cầu: Mật khẩu hiện tại, Mật khẩu mới và Xác nhận mật khẩu mới.<br>
+                3. Người dùng nhập đầy đủ thông tin và bấm "Xác nhận đổi mật khẩu".<br>
+                4. Hệ thống kiểm tra: mật khẩu hiện tại đúng, mật khẩu mới khác mật khẩu cũ, mật khẩu mới khớp xác nhận và ≥ 8 ký tự.<br>
+                5. Hệ thống cập nhật mật khẩu mới đã mã hóa vào CSDL và thông báo đổi mật khẩu thành công.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>5.1. Định dạng Email không hợp lệ hoặc bị trùng lặp</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện Email nhập vào không đúng cấu trúc hoặc đã được liên kết với một tài khoản khác.<br>
+                2. Hệ thống dừng lưu, bôi đỏ ô Email và hiển thị cảnh báo "Địa chỉ Email không hợp lệ hoặc đã được sử dụng".<br>
+                3. Quay lại bước 3 của Basic flow.
+            </p>
+            <p><strong>5.2. Tệp ảnh tải lên vượt quá dung lượng quy định hoặc sai định dạng</strong></p>
+            <p style="margin-left: 20px;">
+                1. Người dùng chọn tệp không phải đuôi .jpg/.png hoặc dung lượng tệp > 5MB.<br>
+                2. Hệ thống từ chối tải lên và hiển thị thông báo: "Vui lòng chọn tệp hình ảnh (.jpg, .png) có dung lượng dưới 5MB".
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 4. Đặc tả use case "Đăng ký hồ sơ & phương tiện" (UC04)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Đăng ký hồ sơ & phương tiện (UC04)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Tài xế đã đăng nhập vào ứng dụng tài xế (CAB Driver) với tài khoản ở trạng thái PENDING_PROFILE.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Hồ sơ cá nhân và thông tin phương tiện của tài xế được lưu vào CSDL với trạng thái PENDING_APPROVAL và gửi thông báo đến bộ phận Vận hành.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Tài xế</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Tài xế</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Mở ứng dụng CAB Driver và chọn chức năng "Đăng ký hồ sơ đối tác tài xế"</td>
+        <td style="padding: 8px;">2. Hiển thị biểu mẫu hướng dẫn gồm 2 phần: Thông tin giấy tờ cá nhân (Số CCCD, Số GPLX) và Thông tin phương tiện (Loại xe, Hãng xe, Biển số xe, Màu xe)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Nhập đầy đủ thông tin vào các trường trên biểu mẫu</td>
+        <td style="padding: 8px;"></td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">4. Chọn tải lên hình ảnh chụp thực tế của các chứng từ bắt buộc: Mặt trước/sau CCCD, Bằng lái xe và Giấy đăng ký xe (Cà vẹt xe)</td>
+        <td style="padding: 8px;"></td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">5. Nhấn nút "Gửi hồ sơ xét duyệt"</td>
+        <td style="padding: 8px;">6. Đánh giá tính hợp lệ của dữ liệu: kiểm tra đầy đủ các trường thông tin bắt buộc, cấu trúc Biển số xe đúng định dạng chuẩn, số GPLX đúng số lượng chữ số và các tệp hình ảnh chứng từ đã được đính kèm đầy đủ</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Lưu thông tin phương tiện vào bảng vehicles và cập nhật trạng thái tài khoản tài xế sang PENDING_APPROVAL trong cơ sở dữ liệu</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">8. Gửi thông báo đến hàng đợi xét duyệt hồ sơ của Ban Vận hành (UC13), đồng thời hiển thị thông báo gửi hồ sơ thành công và màn hình chờ duyệt cho tài xế</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>5.1. Nộp lại hồ sơ sau khi bị nhân viên vận hành yêu cầu bổ sung/sửa đổi</strong></p>
+            <p style="margin-left: 20px;">
+                1. Tài xế mở màn hình thông báo từ chối kèm lý do chi tiết từ nhân viên vận hành.<br>
+                2. Tài xế tiến hành chụp lại giấy tờ rõ nét hoặc chỉnh sửa thông tin sai sót.<br>
+                3. Tài xế bấm "Gửi lại hồ sơ".<br>
+                4. Hệ thống cập nhật lại trạng thái thành PENDING_APPROVAL và chuyển sang bước 8 của Basic flow.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>6.1. Biển số xe hoặc số GPLX đã tồn tại trên hệ thống (Trùng lặp)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện Biển số xe hoặc Số Giấy phép lái xe đã được đăng ký bởi một tài xế khác trong CSDL.<br>
+                2. Hệ thống dừng quy trình lưu, cảnh báo lỗi trùng lặp dữ liệu và hướng dẫn liên hệ tổng đài nếu có nhầm lẫn.<br>
+                3. Quay lại bước 3 của Basic flow.
+            </p>
+            <p><strong>6.2. Thiếu thông tin bắt buộc hoặc chưa tải đủ ảnh chứng từ</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện còn ô thông tin để trống hoặc thiếu ảnh chụp một trong các loại giấy tờ bắt buộc.<br>
+                2. Hệ thống bôi đỏ mục còn thiếu và thông báo: "Vui lòng cung cấp đầy đủ thông tin và hình ảnh chứng từ theo yêu cầu."<br>
+                3. Quay lại bước 3 của Basic flow.
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 5. Đặc tả use case "Đặt xe" (UC05)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Đặt xe (UC05)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Khách hàng đã đăng nhập vào ứng dụng CAB System, thiết bị đã bật định vị GPS và kết nối Internet.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Bản ghi chuyến đi mới được tạo trong CSDL ở trạng thái MATCHING và hệ thống kích hoạt bộ điều phối tìm kiếm tài xế.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Khách hàng</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Khách hàng</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Mở ứng dụng CAB System, giao diện bản đồ tự động định vị vị trí hiện tại của khách hàng</td>
+        <td style="padding: 8px;">2. Điền tọa độ GPS hiện tại vào ô Điểm đón; hiển thị thanh tìm kiếm địa chỉ Điểm đến và các địa điểm gợi ý gần đây</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Nhập địa chỉ Điểm đến mong muốn vào thanh tìm kiếm (hoặc chọn ghim trực tiếp trên bản đồ)</td>
+        <td style="padding: 8px;">4. Gọi Map API tính toán lộ trình đường đi tối ưu, cự ly (km), thời gian di chuyển dự kiến (ETA) và hiển thị danh mục các loại dịch vụ xe kèm giá cước ước tính tương ứng: CabBike, CabCar 4 chỗ, CabCar 7 chỗ</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">5. Chọn loại phương tiện mong muốn (ví dụ: CabCar 4 chỗ) và chọn phương thức thanh toán (Thẻ liên kết hoặc Tiền mặt)</td>
+        <td style="padding: 8px;"></td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">6. Nhấn nút "Xác nhận đặt xe"</td>
+        <td style="padding: 8px;">7. Tiến hành kiểm tra và xác nhận tính hợp lệ: đảm bảo tài khoản khách hàng ở trạng thái ACTIVE, Điểm đón và Điểm đến khác nhau, và cước phí ước tính đã được tính toán hợp lệ</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">8. Khởi tạo bản ghi chuyến đi (Trip) trong CSDL với trạng thái MATCHING, lưu thông tin khách hàng, lộ trình và giá cước ước tính</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">9. Kích hoạt thuật toán điều phối: truy vấn Redis Geospatial quét tìm danh sách các tài xế ONLINE trong bán kính 3 km phù hợp với loại dịch vụ yêu cầu, sắp xếp theo khoảng cách gần nhất</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">10. Hiển thị màn hình radar tìm kiếm tài xế trên ứng dụng của khách hàng kèm hiệu ứng trực quan và đồng thời phát tín hiệu mời nhận chuyến đến tài xế ưu tiên số 1 (UC07)</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>9.1. Tự động mở rộng bán kính quét tìm xe từ 3 km lên 5 km khi chưa có tài xế nhận</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống quét trong bán kính 3 km không tìm thấy tài xế khả dụng hoặc toàn bộ tài xế từ chối.<br>
+                2. Hệ thống tự động mở rộng phạm vi tìm kiếm lên bán kính 5 km.<br>
+                3. Tiếp tục gửi tín hiệu mời chuyến cho các tài xế trong vùng 5 km.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>7.1. Điểm đón và Điểm đến bị trùng vị trí</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện tọa độ Điểm đón và Điểm đến có khoảng cách < 50 mét.<br>
+                2. Hệ thống hiển thị cảnh báo: "Điểm đến không được trùng với điểm đón. Vui lòng chọn lại điểm đến."<br>
+                3. Khách hàng quay lại bước 3 của Basic flow để chọn lại địa chỉ.
+            </p>
+            <p><strong>9.2. Hết phạm vi quét mở rộng mà không có tài xế nào khả dụng (CANCELLED_NO_DRIVER)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống đã quét hết bán kính tối đa 5 km nhưng không có tài xế nào tiếp nhận chuyến đi.<br>
+                2. Hệ thống tự động cập nhật trạng thái Trip thành CANCELLED_NO_DRIVER.<br>
+                3. Hiển thị thông báo xin lỗi khách hàng: "Rất tiếc, hiện tại tất cả các tài xế gần khu vực của bạn đều đang bận. Quý khách vui lòng thử lại sau ít phút."
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 6. Đặc tả use case "Hủy yêu cầu đặt xe" (UC06)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Hủy yêu cầu đặt xe (UC06)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Khách hàng đang có chuyến đi ở trạng thái MATCHING (đang tìm tài xế) hoặc ACCEPTED (tài xế đã nhận cuốc).</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Chuyến đi chuyển sang trạng thái CANCELLED_BY_PASSENGER (hoặc CANCELLED_WITH_FEE), tài xế (nếu có) được giải phóng về trạng thái ONLINE.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Khách hàng</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Khách hàng</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Nhấn nút "Hủy chuyến đi" trên màn hình radar tìm xe hoặc màn hình theo dõi đón xe</td>
+        <td style="padding: 8px;">2. Hiển thị hộp thoại xác nhận hủy chuyến kèm danh sách các lý do hủy để khách hàng lựa chọn (ví dụ: "Đổi ý", "Thời gian chờ quá lâu", "Đặt nhầm địa chỉ")</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Chọn lý do hủy chuyến và nhấn nút "Xác nhận hủy"</td>
+        <td style="padding: 8px;">4. Kiểm tra trạng thái hiện tại của chuyến đi: xác nhận chuyến xe đang ở trạng thái MATCHING (chưa có tài xế nhận)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">5. Cập nhật trạng thái chuyến xe trong cơ sở dữ liệu thành CANCELLED_BY_PASSENGER và lưu lý do hủy (không áp dụng phí phạt)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">6. Dừng quy trình điều phối quét tìm tài xế, hiển thị thông báo hủy thành công và điều hướng khách hàng quay trở lại màn hình bản đồ chính</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>4.1. Khách hàng hủy chuyến trong vòng 2 phút sau khi tài xế bấm nhận (Miễn phí hủy)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống kiểm tra: chuyến đang ở trạng thái ACCEPTED, thời gian trôi qua ≤ 120 giây (2 phút).<br>
+                2. Hệ thống áp dụng chính sách miễn phí phạt: cập nhật trạng thái CANCELLED_BY_PASSENGER.<br>
+                3. Gửi thông báo đến tài xế: "Khách hàng đã hủy chuyến đi", giải phóng tài xế về ONLINE.
+            </p>
+            <p><strong>4.2. Khách hàng hủy chuyến sau 2 phút kể từ khi có tài xế nhận (Áp dụng phí phạt hủy 10.000 VNĐ)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống kiểm tra: chuyến đang ở trạng thái ACCEPTED và thời gian trôi qua > 2 phút.<br>
+                2. Hiển thị cảnh báo áp dụng phí phạt 10.000 VNĐ để bồi thường chi phí di chuyển cho đối tác tài xế.<br>
+                3. Khách hàng nhấn "Đồng ý hủy".<br>
+                4. Cập nhật trạng thái CANCELLED_WITH_FEE, ghi nhận khoản phí phạt 10.000 VNĐ vào hóa đơn của khách, cộng tiền bồi thường vào ví tài xế và giải phóng tài xế về ONLINE.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>3.1. Khách hàng đổi ý bấm "Giữ lại chuyến đi" tại hộp thoại xác nhận</strong></p>
+            <p style="margin-left: 20px;">
+                1. Khách hàng nhấn nút "Giữ lại chuyến đi".<br>
+                2. Hệ thống đóng hộp thoại hủy, chuyến đi tiếp tục quy trình tìm xe hoặc đón xe bình thường.
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 7. Đặc tả use case "Tiếp nhận & Phản hồi chuyến xe" (UC07)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Tiếp nhận & Phản hồi chuyến xe (UC07)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Tài xế đã đăng nhập vào ứng dụng CAB Driver, tài khoản ở trạng thái ACTIVE, số dư ví ký quỹ ≥ 50.000 VNĐ và đã bật GPS.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Chuyến xe được gán cho tài xế với trạng thái ACCEPTED (nếu nhận) hoặc được chuyển tiếp cho tài xế phù hợp kế tiếp (nếu từ chối/timeout).</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Tài xế</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Nhà cung cấp Thông báo (FCM Push Service)</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Tài xế</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Gạt nút công tắc trên màn hình chính của ứng dụng CAB Driver sang trạng thái "ONLINE"</td>
+        <td style="padding: 8px;">2. Kiểm tra điều kiện hoạt động (số dư ví ký quỹ ≥ 50.000 VNĐ và quyền truy cập GPS). Ghi nhận tọa độ GPS của tài xế vào Redis Cache, kích hoạt dịch vụ phát tọa độ nền và đưa tài xế vào hàng đợi sẵn sàng nhận cuốc</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">3. Khi có chuyến xe mới phù hợp gần nhất (từ UC05), hệ thống phát tín hiệu mời nhận chuyến: thiết bị rung chuông cảnh báo và bật màn hình chi tiết cuốc xe (Điểm đón, Điểm trả, Quãng đường, Loại xe, Cước ước tính) kèm thanh đếm ngược 20 giây</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">4. Quan sát thông tin cuốc xe trên màn hình và nhấn nút "Chấp nhận" trong vòng 20 giây</td>
+        <td style="padding: 8px;">5. Áp dụng cơ chế Khóa phân tán (Distributed Lock), kiểm tra xác nhận chuyến xe này vẫn đang ở trạng thái MATCHING (chưa bị tài xế khác nhận hoặc khách hủy)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">6. Cập nhật trạng thái chuyến đi sang ACCEPTED, gán định danh tài xế (driver_id) và phương tiện vào bản ghi chuyến đi trong CSDL</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Cập nhật trạng thái tài xế sang BUSY (đang bận trong chuyến) và xóa tạm thời khỏi danh sách điều phối tìm xe</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">8. Gửi thông báo Push đến ứng dụng Khách hàng: "Đã tìm thấy tài xế đón bạn!" kèm hình ảnh, họ tên tài xế, biển số xe và định vị xe theo thời gian thực</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">9. Chuyển màn hình ứng dụng tài xế sang giao diện bản đồ điều hướng chỉ đường đến vị trí Điểm đón của khách hàng</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>4.1. Tài xế chủ động nhấn nút "Từ chối" chuyến xe</strong></p>
+            <p style="margin-left: 20px;">
+                1. Tài xế nhấn nút "Từ chối" trên màn hình nhận chuyến.<br>
+                2. Hệ thống đóng màn hình lời mời, giữ tài xế ở trạng thái ONLINE, ghi nhận 1 lần từ chối cuốc vào thống kê.<br>
+                3. Hệ thống ngay lập tức chuyển tiếp cuốc xe sang tài xế khả dụng kế tiếp trong danh sách điều phối.
+            </p>
+            <p><strong>4.2. Hết thời gian đếm ngược 20 giây tài xế không phản hồi (Timeout)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Tài xế không thực hiện bất kỳ thao tác nào trong suốt 20 giây đếm ngược.<br>
+                2. Khi hết thời gian, hệ thống tự động đóng màn hình lời mời, ghi nhận 1 lần bỏ qua cuốc (Timeout).<br>
+                3. Hệ thống tự động thu hồi cuốc và chuyển tiếp cho tài xế phù hợp tiếp theo.
+            </p>
+            <p><strong>1.1. Tài xế gạt nút chuyển về trạng thái Ngoại tuyến (OFFLINE) khi kết thúc ca làm việc</strong></p>
+            <p style="margin-left: 20px;">
+                1. Tài xế gạt công tắc trên màn hình về OFFLINE khi muốn nghỉ ngơi hoặc kết thúc ca.<br>
+                2. Hệ thống xóa tài xế khỏi danh sách điều phối trong Redis Cache và ngắt luồng truyền tọa độ liên tục.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>2.1. Tài xế không đủ điều kiện bật ONLINE</strong></p>
+            <p style="margin-left: 20px;">
+                1. Tài xế gạt bật ONLINE nhưng số dư ví ký quỹ dưới 50.000 VNĐ hoặc thiết bị chưa cấp quyền truy cập vị trí GPS.<br>
+                2. Hệ thống dừng thao tác, hiển thị cảnh báo yêu cầu nạp thêm tiền hoặc bật GPS trong phần cài đặt thiết bị.<br>
+                3. Nút công tắc tự động gạt về trạng thái OFFLINE.
+            </p>
+            <p><strong>5.1. Khách hàng đã hủy chuyến trong lúc tài xế đang đếm ngược phản hồi</strong></p>
+            <p style="margin-left: 20px;">
+                1. Khách hàng bấm hủy cuốc khi tài xế đang quan sát màn hình nhận chuyến.<br>
+                2. Hệ thống lập tức đóng màn hình lời mời và hiển thị thông báo: "Khách hàng đã hủy chuyến xe này".<br>
+                3. Tài xế tiếp tục giữ trạng thái ONLINE sẵn sàng cho các cuốc tiếp theo.
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 8. Đặc tả use case "Cập nhật tiến trình chuyến đi" (UC08)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Cập nhật tiến trình chuyến đi (UC08)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Chuyến đi đang ở trạng thái ACCEPTED và tài xế đang mở màn hình chuyến đi trên ứng dụng CAB Driver.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Chuyến đi được hoàn thành tại điểm đến và chuyển sang trạng thái PAYMENT_PENDING để kích hoạt thanh toán.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Tài xế</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Nhà cung cấp Thông báo</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Tài xế</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Di chuyển xe đến vị trí Điểm đón của khách hàng và nhấn nút "Đã đến điểm đón"</td>
+        <td style="padding: 8px;">2. Đối chiếu tọa độ GPS thực tế của xe với tọa độ Điểm đón (sai số ≤ 50m). Cập nhật trạng thái chuyến đi thành DRIVER_ARRIVED, gửi thông báo đẩy đến khách hàng ra điểm hẹn và kích hoạt đồng hồ đếm thời gian chờ khách</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Khách hàng đã lên xe an toàn, tài xế nhấn nút "Bắt đầu chuyến đi"</td>
+        <td style="padding: 8px;">4. Cập nhật trạng thái chuyến đi thành IN_TRANSIT. Kích hoạt bộ đếm thời gian di chuyển, bắt đầu ghi nhận vệt tọa độ GPS thực tế theo thời gian thực và mở bản đồ dẫn đường đến Điểm đến</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">5. Lái xe chở khách đến vị trí Điểm đến an toàn và nhấn nút "Hoàn thành chuyến đi"</td>
+        <td style="padding: 8px;">6. Khóa tọa độ GPS kết thúc chuyến: tổng hợp cự ly di chuyển GPS thực tế và tổng thời gian lăn bánh để tính toán chốt số tiền cước phí thực tế cuối cùng (Final Fare)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Cập nhật trạng thái chuyến đi thành PAYMENT_PENDING, lưu cước phí thực tế vào CSDL và tự động kích hoạt chuyển tiếp sang quy trình thanh toán chuyến đi (UC11)</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>2.1. Khách hàng không có mặt tại điểm đón sau 10 phút chờ đợi (No-show)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Tài xế đã nhấn "Đã đến điểm đón" và đồng hồ đếm ngược chờ khách vượt quá 10 phút.<br>
+                2. Nút "Hủy chuyến — Khách không đến" sáng lên trên màn hình ứng dụng.<br>
+                3. Tài xế nhấn nút hủy: hệ thống cập nhật chuyến thành CANCELLED_NO_SHOW, áp dụng phí bồi thường cho tài xế và giải phóng tài xế về trạng thái ONLINE.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>1.1. Tài xế bấm "Đã đến điểm đón" khi vị trí GPS còn cách quá xa (> 50m)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện khoảng cách giữa xe và điểm đón lớn hơn 50 mét.<br>
+                2. Hệ thống dừng cập nhật, hiển thị cảnh báo: "Bạn chưa đến điểm đón khách. Vui lòng di chuyển lại gần hơn."<br>
+                3. Tài xế tiếp tục lái xe đến điểm đón và thực hiện lại bước 1.
+            </p>
+            <p><strong>4.1. Mất tín hiệu mạng di động 4G giữa lộ trình di chuyển (Lưu đệm GPS ngoại tuyến)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Thiết bị của tài xế mất sóng mạng 4G khi đang chở khách.<br>
+                2. Ứng dụng tự động chuyển sang cơ chế lưu đệm tọa độ GPS cục bộ vào bộ nhớ SQLite máy (tối đa 50 điểm).<br>
+                3. Khi có kết nối mạng trở lại, ứng dụng tự động đồng bộ bù (Batch sync) toàn bộ dữ liệu tọa độ lên máy chủ.
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 9. Đặc tả use case "Theo dõi chuyến đi" (UC09)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Theo dõi chuyến đi (UC09)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Khách hàng có chuyến đi đang ở trạng thái ACCEPTED hoặc IN_TRANSIT.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Lộ trình di chuyển và vị trí của xe được hiển thị trực quan, liên tục theo thời gian thực trên màn hình ứng dụng khách hàng.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Khách hàng</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Khách hàng</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Mở màn hình chuyến đi đang diễn ra trên ứng dụng CAB System</td>
+        <td style="padding: 8px;">2. Thiết lập kênh kết nối hai chiều thời gian thực (WebSocket) với máy chủ điều phối và hiển thị bản đồ lộ trình di chuyển</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">3. Lắng nghe luồng dữ liệu tọa độ GPS định kỳ (3 - 5 giây/lần) được truyền về từ thiết bị của tài xế</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">4. Cập nhật chuyển động mượt mà của biểu tượng xe trên bản đồ men theo tuyến đường thực tế; tự động xoay hướng mũi xe theo góc di chuyển</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">5. Tự động tính toán lại và hiển thị thời gian dự kiến xe đến nơi (ETA) và khoảng cách còn lại căn cứ theo tình hình giao thông thực tế</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">6. Quan sát vị trí xe di chuyển trên bản đồ và chủ động đón xe tại điểm đón hoặc chuẩn bị xuống xe tại điểm trả</td>
+        <td style="padding: 8px;"></td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>4.1. Xe di chuyển vào phạm vi 100m gần điểm đón</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện khoảng cách giữa xe và điểm đón ≤ 100m.<br>
+                2. Ứng dụng tự động rung nhẹ và hiển thị thông báo: "Tài xế đang đến rất gần. Vui lòng chuẩn bị ra điểm đón!"
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>2.1. Mất kết nối mạng Internet tạm thời trên thiết bị khách hàng (Auto-reconnect WebSocket)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Thiết bị của khách hàng bị gián đoạn mạng di động/WiFi.<br>
+                2. Ứng dụng hiển thị thanh cảnh báo màu vàng: "Đang kết nối lại..." trên đầu bản đồ.<br>
+                3. Khi có mạng trở lại, ứng dụng tự động kết nối lại WebSocket và cập nhật tọa độ xe mới nhất.
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 10. Đặc tả use case "Xem lịch sử chuyến đi" (UC10)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Xem lịch sử chuyến đi (UC10)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Người dùng (Khách hàng hoặc Tài xế) đã đăng nhập thành công vào hệ thống.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Danh sách lịch sử các chuyến đi và thông tin chi tiết từng chuyến được truy xuất và hiển thị trực quan.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Khách hàng, Tài xế</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Người dùng</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Mở menu cá nhân trên ứng dụng và chọn mục "Lịch sử chuyến đi"</td>
+        <td style="padding: 8px;">2. Truy vấn cơ sở dữ liệu và hiển thị danh sách các chuyến đi của người dùng theo thứ tự thời gian mới nhất (phân trang 10 chuyến/trang), gồm: Ngày giờ thực hiện, Điểm đón, Điểm trả, Giá cước và Trạng thái chuyến đi (Hoàn thành / Đã hủy)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Nhấn chọn vào một chuyến đi cụ thể trong danh sách để xem chi tiết</td>
+        <td style="padding: 8px;">4. Hiển thị toàn bộ thông tin chi tiết của chuyến đi: Bản đồ lộ trình di chuyển, Họ tên và biển số xe của tài xế (hoặc tên khách), Bảng bóc tách chi tiết cước phí (Cước cơ bản, phụ phí, giảm giá), Phương thức thanh toán đã sử dụng và đánh giá số sao (nếu có)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">5. Quan sát thông tin chuyến đi và chọn "Đóng" hoặc nhấn nút "Tải hóa đơn điện tử"</td>
+        <td style="padding: 8px;">6. Tạo tệp tin hóa đơn điện tử định dạng PDF có mã tra cứu hóa đơn và tự động tải xuống thiết bị của người dùng</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>2.1. Tìm kiếm và lọc chuyến đi theo khoảng thời gian hoặc theo trạng thái chuyến</strong></p>
+            <p style="margin-left: 20px;">
+                1. Người dùng bấm vào nút Lọc trên thanh tìm kiếm lịch sử.<br>
+                2. Chọn khoảng thời gian (Tuần này, Tháng này) hoặc chọn trạng thái (Hoàn thành / Đã hủy).<br>
+                3. Hệ thống lọc và cập nhật danh sách chuyến đi tương ứng.<br>
+                4. Quay lại bước 3 của Basic flow.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>2.2. Tài khoản người dùng chưa phát sinh chuyến đi nào trong hệ thống (Trạng thái rỗng - Empty State)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Truy vấn cơ sở dữ liệu trả về 0 bản ghi.<br>
+                2. Hệ thống hiển thị hình ảnh minh họa trạng thái trống kèm thông báo: "Bạn chưa có chuyến đi nào cùng CAB System. Hãy đặt chuyến đầu tiên ngay hôm nay!"
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 11. Đặc tả use case "Thanh toán chuyến đi" (UC11)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Thanh toán chuyến đi (UC11)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Chuyến đi vừa hoàn thành tại điểm đến, đang ở trạng thái PAYMENT_PENDING và hệ thống đã chốt số tiền cước phí thực tế cuối cùng.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Giao dịch thanh toán được ghi nhận thành công trong CSDL, trạng thái chuyến đi chuyển sang COMPLETED, hóa đơn điện tử được xuất và ví tài xế được cộng doanh thu sau chiết khấu.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Khách hàng, Tài xế</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Nhà cung cấp Thanh toán (Payment Gateway)</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Khách hàng</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Quan sát màn hình thông báo hoàn tất chuyến đi, kiểm tra bảng kê chi tiết cước phí thực tế (Quãng đường GPS, Thời gian, Cước phí, Phụ phí) và phương thức thanh toán điện tử đã chọn (Thẻ liên kết / Ví điện tử)</td>
+        <td style="padding: 8px;">2. Hiển thị giao diện thanh toán với đầy đủ thông tin hóa đơn bóc tách, mã chuyến đi và phương thức thanh toán mặc định</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Nhấn nút "Xác nhận thanh toán" (hoặc hệ thống tự động kích hoạt sau 10 giây nếu khách hàng không thay đổi thao tác)</td>
+        <td style="padding: 8px;">4. Kiểm tra tính hợp lệ của giao dịch, xác nhận chuyến đi đang ở trạng thái PAYMENT_PENDING và gửi yêu cầu thanh toán (Charge Request) kèm mã định danh Token của thẻ (tuân thủ PCI-DSS, không truyền số thẻ thô) cùng số tiền cước sang Cổng thanh toán bên ngoài</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">5. Cổng thanh toán tiến hành xử lý trừ tiền và phản hồi kết quả giao dịch thành công kèm mã tham chiếu giao dịch (transaction_id)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">6. Cập nhật trạng thái chuyến đi từ PAYMENT_PENDING sang COMPLETED và ghi nhận thông tin giao dịch thanh toán thành công vào cơ sở dữ liệu</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Tự động tính toán và khấu trừ tỷ lệ hoa hồng nền tảng (ví dụ: 20%), ghi nhận doanh thu ròng vào ví của tài xế</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">8. Xuất hóa đơn điện tử (E-receipt) hiển thị lên ứng dụng Khách hàng; đồng thời gửi thông báo đẩy (Push) đến ứng dụng Tài xế xác nhận khách đã thanh toán xong và mở lại trạng thái sẵn sàng đón chuyến mới</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">9. Xem hóa đơn điện tử trên màn hình và nhấn nút "Tiếp tục" để chuyển sang màn hình Đánh giá tài xế (UC12)</td>
+        <td style="padding: 8px;">10. Điều hướng giao diện ứng dụng Khách hàng sang màn hình Đánh giá chất lượng dịch vụ</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>1.1. Khách hàng lựa chọn thanh toán bằng Tiền mặt (Cash)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Tại bước 1 của Basic flow, Khách hàng nhấn chuyển đổi phương thức thanh toán sang "Tiền mặt" và bấm Xác nhận.<br>
+                2. Hệ thống ghi nhận phương thức tiền mặt và hiển thị thông báo số tiền mặt cần thu lên ứng dụng của Tài xế.<br>
+                3. Khách hàng trả tiền mặt trực tiếp cho Tài xế ngoài đời.<br>
+                4. Tài xế kiểm đếm đủ tiền và nhấn nút "Xác nhận đã nhận đủ tiền mặt" trên ứng dụng CAB Driver.<br>
+                5. Hệ thống kiểm tra xác nhận từ tài xế, tự động khấu trừ tiền hoa hồng nền tảng từ số dư ví ký quỹ của tài xế.<br>
+                6. Hệ thống cập nhật trạng thái chuyến đi thành COMPLETED và xuất hóa đơn điện tử cho khách hàng.<br>
+                7. Chuyển sang bước 9 của Basic flow.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>4.1. Giao dịch thanh toán điện tử thất bại (Thẻ hết hạn, không đủ số dư, tài khoản bị từ chối)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Cổng thanh toán phản hồi giao dịch không thành công kèm mã lỗi chi tiết.<br>
+                2. Hệ thống dừng quy trình trừ tiền thẻ và tự động kích hoạt cơ chế Fallback an toàn: chuyển đổi phương thức thanh toán của chuyến xe sang "Tiền mặt".<br>
+                3. Hệ thống hiển thị popup cảnh báo trên ứng dụng Khách hàng: "Thanh toán thẻ không thành công. Quý khách vui lòng thanh toán bằng Tiền mặt trực tiếp cho tài xế."<br>
+                4. Đồng thời gửi thông báo đến ứng dụng Tài xế: "Thanh toán thẻ lỗi. Vui lòng thu tiền mặt trực tiếp từ khách hàng: [Số tiền] VNĐ".<br>
+                5. Chuyển tiếp quy trình sang xử lý từ bước 3 của Luồng phụ 1.1 (Thanh toán bằng Tiền mặt).
+            </p>
+            <p><strong>4.2. Cổng thanh toán không phản hồi hoặc mất kết nối (Gateway Timeout quá 30 giây)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống gửi yêu cầu thanh toán nhưng quá 30 giây không nhận được phản hồi từ Gateway.<br>
+                2. Hệ thống chủ động gửi lệnh hủy phiên giao dịch đang chờ để tránh trừ tiền hai lần và ghi nhận nhật ký lỗi kết nối.<br>
+                3. Hệ thống tự động kích hoạt Fallback sang Tiền mặt và gửi cảnh báo đến cả Khách hàng và Tài xế để hoàn tất cuốc xe an toàn.<br>
+                4. Chuyển sang xử lý từ bước 3 của Luồng phụ 1.1.
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 12. Đặc tả use case "Đánh giá & Phản hồi tài xế" (UC12)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Đánh giá & Phản hồi tài xế (UC12)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Chuyến đi đã chuyển sang trạng thái COMPLETED sau khi thanh toán thành công.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Bản ghi đánh giá được lưu vào CSDL và điểm đánh giá sao trung bình của tài xế được tính toán cập nhật lại.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Khách hàng</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Khách hàng</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Mở màn hình Đánh giá chuyến đi (tự động hiển thị sau khi hoàn tất thanh toán ở UC11 hoặc mở từ mục Lịch sử)</td>
+        <td style="padding: 8px;">2. Hiển thị giao diện đánh giá gồm: Thang điểm 5 sao, danh sách các nhãn góp ý nhanh (ví dụ: "Lái xe an toàn", "Xe sạch sẽ", "Thân thiện", "Đúng giờ") và ô nhập ý kiến đóng góp bằng văn bản</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Chạm chọn số sao đánh giá (từ 1 đến 5 sao) và tích chọn các nhãn góp ý phù hợp với trải nghiệm chuyến đi</td>
+        <td style="padding: 8px;"></td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">4. Nhập thêm ý kiến nhận xét chi tiết (tùy chọn) vào ô bình luận văn bản</td>
+        <td style="padding: 8px;"></td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">5. Nhấn nút "Gửi đánh giá"</td>
+        <td style="padding: 8px;">6. Đánh giá tính hợp lệ của dữ liệu: đảm bảo số sao đã được chọn hợp lệ (từ 1 đến 5) và nội dung bình luận (nếu có) không chứa từ ngữ vi phạm tiêu chuẩn cộng đồng</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Lưu bản ghi đánh giá vào CSDL gắn với mã chuyến đi và mã tài xế</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">8. Tính toán lại điểm số sao trung bình của tài xế theo công thức lũy kế và cập nhật vào hồ sơ đối tác</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">9. Hiển thị thông báo cảm ơn: "Cảm ơn bạn đã đóng góp ý kiến giúp nâng cao chất lượng dịch vụ!" và điều hướng khách hàng về màn hình bản đồ chính</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>3.1. Khách hàng đánh giá 1 sao — Kích hoạt quy trình cảnh báo chất lượng dịch vụ CSKH</strong></p>
+            <p style="margin-left: 20px;">
+                1. Khách hàng chọn 1 sao trên màn hình đánh giá.<br>
+                2. Hệ thống bắt buộc khách hàng phải chọn ít nhất 1 lý do không hài lòng từ danh sách lỗi phục vụ.<br>
+                3. Khách hàng gửi đánh giá; hệ thống tự động gắn cờ cảnh báo (Flagged) để chuyển tiếp hồ sơ cho bộ phận CSKH kiểm tra lại tài xế.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>1.1. Khách hàng không muốn đánh giá và nhấn nút "Bỏ qua / Đóng"</strong></p>
+            <p style="margin-left: 20px;">
+                1. Khách hàng nhấn nút "Bỏ qua" ở góc trên màn hình đánh giá.<br>
+                2. Hệ thống đóng màn hình đánh giá, không lưu bản ghi nào và điều hướng khách hàng về màn hình bản đồ chính.
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 13. Đặc tả use case "Quản lý tài khoản & Duyệt tài xế" (UC13)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Quản lý tài khoản & Duyệt tài xế (UC13)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Nhân viên Vận hành đã đăng nhập thành công vào Cổng thông tin Quản trị Web (Admin Portal).</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Trạng thái tài khoản người dùng hoặc hồ sơ đối tác tài xế được cập nhật vào CSDL kèm vết kiểm toán (Audit Log).</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Nhân viên Vận hành</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Nhân viên Vận hành</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Chọn mục "Phê duyệt đối tác tài xế" trên thanh menu quản trị hệ thống</td>
+        <td style="padding: 8px;">2. Kiểm tra phân quyền nhân viên. Truy vấn và hiển thị danh sách các hồ sơ tài xế mới đăng ký đang ở trạng thái "Chờ xét duyệt" (PENDING_APPROVAL)</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Nhấp chọn một hồ sơ tài xế cụ thể từ danh sách để xem chi tiết</td>
+        <td style="padding: 8px;">4. Hiển thị toàn bộ thông tin chi tiết của hồ sơ: Họ tên, Số điện thoại, Số CCCD, Bằng lái xe, Thông tin phương tiện và hình ảnh chứng từ gốc chụp đính kèm</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">5. Kiểm tra tính xác thực, độ rõ nét của hình ảnh giấy tờ và nhấn nút "Phê duyệt hồ sơ"</td>
+        <td style="padding: 8px;">6. Đánh giá tính hợp lệ của thao tác, kiểm tra hồ sơ vẫn đang ở trạng thái PENDING_APPROVAL và xác nhận tài khoản nhân viên có đủ thẩm quyền phê duyệt</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Cập nhật trạng thái tài khoản tài xế thành "Hoạt động" (ACTIVE) trong CSDL</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">8. Tự động ghi nhật ký kiểm toán (Audit Log) lưu vết chi tiết: AdminID, Timestamp, Hành động phê duyệt, và Địa chỉ IP</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">9. Gửi tin nhắn SMS/Push thông báo kích hoạt tài khoản thành công đến số điện thoại của đối tác tài xế</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">10. Hiển thị thông báo "Phê duyệt hồ sơ thành công" và làm mới lại danh sách hồ sơ chờ duyệt</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>5.1. Nhân viên vận hành Từ chối phê duyệt do giấy tờ không đạt chuẩn</strong></p>
+            <p style="margin-left: 20px;">
+                1. Nhân viên phát hiện ảnh chụp bằng lái hoặc cà vẹt xe bị mờ hoặc thông tin không trùng khớp.<br>
+                2. Bấm nút "Từ chối", chọn lý do từ chối và nhập hướng dẫn bổ sung cho tài xế.<br>
+                3. Hệ thống cập nhật trạng thái hồ sơ thành REJECTED, ghi nhận Audit Log và gửi thông báo cho tài xế làm lại hồ sơ.
+            </p>
+            <p><strong>1.1. Nhân viên vận hành Khóa / Tạm ngừng tài khoản vi phạm quy chế (Tài xế hoặc Khách hàng)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Tại danh mục Quản lý người dùng, nhân viên tìm kiếm tài khoản bị khiếu nại và bấm nút "Khóa tài khoản".<br>
+                2. Nhập lý do khóa bắt buộc (ví dụ: "Tài xế có tỷ lệ hủy chuyến bất thường", "Gian lận voucher").<br>
+                3. Hệ thống cập nhật trạng thái tài khoản thành LOCKED, ghi nhận Audit Log và đăng xuất người dùng trên mọi thiết bị.
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>5.2. Hồ sơ tài xế đã được xử lý bởi nhân viên vận hành khác trước đó (Trùng lặp thao tác)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện hồ sơ tài xế không còn ở trạng thái PENDING_APPROVAL (đã được nhân viên khác duyệt hoặc từ chối trước đó).<br>
+                2. Hệ thống dừng thao tác, hiển thị popup: "Hồ sơ đối tác này đã được xử lý bởi một nhân viên khác."<br>
+                3. Tự động tải lại trang danh sách mới nhất.
+            </p>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+### 14. Đặc tả use case "Giám sát vận hành & Báo cáo thống kê" (UC14)
+
+<table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+    <tr>
+        <th colspan="2" style="padding: 8px; font-size: 16px;">Giám sát vận hành & Báo cáo thống kê (UC14)</th>
+    </tr>
+    <tr>
+        <td style="width: 30%; font-weight: bold; padding: 8px;">Tiền điều kiện</td>
+        <td style="padding: 8px;">Nhân viên Vận hành hoặc Ban lãnh đạo đã đăng nhập thành công vào Cổng Quản trị Web với quyền hạn phù hợp.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Hậu điều kiện</td>
+        <td style="padding: 8px;">Dữ liệu giám sát trực tiếp chuyến xe hoặc bảng biểu báo cáo thống kê KPI doanh thu được tổng hợp và hiển thị trực quan.</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor chính</td>
+        <td style="padding: 8px;">Nhân viên Vận hành, Ban lãnh đạo</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Actor phụ</td>
+        <td style="padding: 8px;">Không</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Basic flow</td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold; padding: 8px;">Nhân viên Vận hành / Ban lãnh đạo</td>
+        <td style="font-weight: bold; padding: 8px;">Hệ thống</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">1. Chọn chức năng "Giám sát vận hành & Báo cáo thống kê" trên thanh menu quản trị</td>
+        <td style="padding: 8px;">2. Kiểm tra phân quyền tài khoản và hiển thị giao diện gồm 2 phân hệ: (1) Bản đồ giám sát trực tiếp cuốc xe thời gian thực (Live Operations Map) và (2) Báo cáo thống kê kinh doanh & KPI</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">3. Chọn phân hệ "Báo cáo thống kê kinh doanh & KPI"</td>
+        <td style="padding: 8px;">4. Hiển thị Dashboard báo cáo với bộ lọc tiêu chí: Khoảng thời gian [Từ ngày - Đến ngày], Loại dịch vụ xe (CabBike, CabCar 4/7 chỗ) và Khu vực vận hành</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">5. Chọn khoảng thời gian cần xem (ví dụ: tháng hiện tại) và nhấn nút "Xem báo cáo"</td>
+        <td style="padding: 8px;">6. Đánh giá tính hợp lệ của bộ lọc: kiểm tra Ngày bắt đầu phải nhỏ hơn hoặc bằng Ngày kết thúc</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">7. Tiến hành truy vấn cơ sở dữ liệu và tính toán các chỉ số KPI then chốt: Tổng số chuyến hoàn thành, Doanh thu tổng, Doanh thu ròng nền tảng, Tỷ lệ hủy chuyến và Đánh giá sao trung bình</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;"></td>
+        <td style="padding: 8px;">8. Gom nhóm số liệu theo ngày/tháng để dựng biểu đồ xu hướng doanh thu (Line/Bar Chart) và đổ dữ liệu vào bảng danh sách chi tiết</td>
+    </tr>
+    <tr>
+        <td style="padding: 8px;">9. Quan sát các chỉ số thống kê trên màn hình và nhấn nút "Xuất báo cáo Excel"</td>
+        <td style="padding: 8px;">10. Trích xuất toàn bộ dữ liệu đang hiển thị ra tệp tin định dạng .xlsx và tự động tải xuống thiết bị của người dùng</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Alternative flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>3.1. Chuyển sang phân hệ Bản đồ giám sát trực tiếp (Live Operations Map) để hỗ trợ can thiệp cuốc xe sự cố khẩn cấp (SOS)</strong></p>
+            <p style="margin-left: 20px;">
+                1. Người dùng bấm chọn phân hệ Bản đồ giám sát thời gian thực.<br>
+                2. Hệ thống hiển thị bản đồ số hiển thị tất cả các cuốc xe đang di chuyển. Khi có chuyến xe phát tín hiệu SOS màu đỏ, nhân viên nhấp chọn cuốc xe để xem thông tin liên lạc hai bên.<br>
+                3. Nhân viên gọi điện hỗ trợ hoặc bấm nút "Hủy chuyến khẩn cấp" / "Điều phối xe thay thế".<br>
+                4. Hệ thống cập nhật trạng thái cuốc xe và tự động ghi nhận vào Nhật ký kiểm toán (Audit Log).
+            </p>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="font-weight: bold; padding: 8px;">Exception flow</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding: 8px;">
+            <p><strong>6.1. Khoảng thời gian lọc không hợp lệ</strong></p>
+            <p style="margin-left: 20px;">
+                1. Hệ thống phát hiện giá trị "Từ ngày" lớn hơn "Đến ngày".<br>
+                2. Hệ thống dừng truy vấn, bôi đỏ ô thời gian và hiển thị tooltip "Ngày bắt đầu không được lớn hơn ngày kết thúc".<br>
+                3. Quay lại bước 5 của Basic flow để chọn lại.
+            </p>
+            <p><strong>6.2. Không có dữ liệu chuyến đi nào phát sinh trong khoảng thời gian đã chọn</strong></p>
+            <p style="margin-left: 20px;">
+                1. Câu truy vấn CSDL trả về 0 kết quả.<br>
+                2. Hệ thống hiển thị các thẻ KPI là 0, biểu đồ phẳng và bảng dữ liệu rỗng kèm thông báo: "Không có dữ liệu phát sinh trong khoảng thời gian này."
+            </p>
+        </td>
+    </tr>
+</table>
 
 ---
 
@@ -1385,4 +2000,3 @@ Các thông số dưới đây được thiết lập dưới dạng **Tham số
 | **OQ06** | **Chính sách phí hủy chuyến** | Thời gian hủy miễn phí sau khi nhận xe là bao nhiêu phút và mức phạt hủy áp dụng cụ thể là bao nhiêu tiền? |
 | **OQ07** | **Chính sách xử lý sự cố cổng thanh toán** | Khi cổng thanh toán gặp sự cố kéo dài, hệ thống tạm khóa chức năng trả qua thẻ hay tự động chuyển toàn bộ sang tiền mặt? |
 | **OQ08** | **Thời hạn lưu trữ vết kiểm toán** | Doanh nghiệp yêu cầu lưu vết lịch sử GPS chi tiết và nhật ký thao tác quản trị trong thời hạn bao lâu phục vụ thanh tra? |
-

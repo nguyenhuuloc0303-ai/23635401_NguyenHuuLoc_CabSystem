@@ -33,21 +33,21 @@ tags:
   - name: 01. Authentication & Users
     description: Đăng ký, SMS OTP, Đăng nhập JWT, Hồ sơ cá nhân (UC01, UC02, UC03)
   - name: 02. Driver & Vehicle Profile
-    description: Đăng ký phương tiện, Bật/Tắt Online, Gửi tọa độ GPS (UC10, UC11)
+    description: Đăng ký phương tiện, Bật/Tắt Online, Gửi tọa độ GPS (UC04, UC07)
   - name: 03. Ride Booking & Estimation
-    description: Báo giá ước tính, Đặt xe, Hủy chuyến xe (UC04, UC05)
+    description: Báo giá ước tính, Đặt xe, Hủy chuyến xe (UC05, UC06)
   - name: 04. Ride Lifecycle & Tracking
-    description: Tiếp nhận, từ chối, cập nhật lộ trình chuyến đi (UC06, UC09, UC12, UC13, UC14)
+    description: Tiếp nhận, từ chối, cập nhật lộ trình chuyến đi (UC07, UC08, UC09, UC10)
   - name: 05. Payments & Invoices
-    description: Chốt cước, thanh toán tiền mặt/thẻ số, xử lý Fallback, hóa đơn (UC07)
+    description: Chốt cước, thanh toán tiền mặt/thẻ số, xử lý Fallback, hóa đơn (UC11)
   - name: 06. Notifications
     description: Quản lý thông báo người dùng và sự kiện hệ thống
   - name: 07. Reviews & Ratings
-    description: Khách hàng chấm điểm và đánh giá dịch vụ tài xế (UC08)
+    description: Khách hàng chấm điểm và đánh giá dịch vụ tài xế (UC12)
   - name: 08. Admin & Operations
-    description: Khóa/Mở tài khoản, duyệt tài xế, Live Monitor bản đồ, can thiệp sự cố (UC15, UC16)
+    description: Khóa/Mở tài khoản, duyệt tài xế, Live Monitor bản đồ, can thiệp sự cố (UC13, UC14)
   - name: 09. Analytics & KPI Reports
-    description: Báo cáo doanh thu, tỷ lệ hoàn thành, hiệu suất tài xế, Audit Logs (UC17)
+    description: Báo cáo doanh thu, tỷ lệ hoàn thành, hiệu suất tài xế, Audit Logs (UC14)
 
 paths:
   # ========================================================
@@ -190,7 +190,7 @@ paths:
     post:
       tags:
         - 02. Driver & Vehicle Profile
-      summary: Đăng ký GPLX và phương tiện (UC10 / FR05)
+      summary: Đăng ký GPLX và phương tiện (UC04 / FR05)
       security:
         - BearerAuth: []
       requestBody:
@@ -208,7 +208,7 @@ paths:
     get:
       tags:
         - 02. Driver & Vehicle Profile
-      summary: Tra cứu thông tin xe & trạng thái duyệt (UC10)
+      summary: Tra cứu thông tin xe & trạng thái duyệt (UC04)
       security:
         - BearerAuth: []
       responses:
@@ -222,7 +222,7 @@ paths:
     put:
       tags:
         - 02. Driver & Vehicle Profile
-      summary: Tài xế Bật / Tắt trạng thái Online / Offline (UC11 / FR08)
+      summary: Tài xế Bật / Tắt trạng thái Online / Offline (UC07 / FR08)
       security:
         - BearerAuth: []
       requestBody:
@@ -284,7 +284,7 @@ paths:
     post:
       tags:
         - 03. Ride Booking & Estimation
-      summary: Tạo yêu cầu đặt xe mới (UC04 / FR06 / FR10 / RULE-01)
+      summary: Tạo yêu cầu đặt xe mới (UC05 / FR06 / FR10 / RULE-01)
       security:
         - BearerAuth: []
       requestBody:
@@ -304,7 +304,7 @@ paths:
     post:
       tags:
         - 03. Ride Booking & Estimation
-      summary: Khách hủy chuyến xe & Phí phạt nếu hủy sau 2 phút (UC05 / FR15 / RULE-04 / ASM-04)
+      summary: Khách hủy chuyến xe & Phí phạt nếu hủy sau 2 phút (UC06 / FR15 / RULE-04 / ASM-04)
       security:
         - BearerAuth: []
       parameters:
@@ -336,7 +336,7 @@ paths:
     get:
       tags:
         - 04. Ride Lifecycle & Tracking
-      summary: Lấy chi tiết chuyến xe và vị trí tài xế thời gian thực (UC06 / FR17)
+      summary: Lấy chi tiết chuyến xe và vị trí tài xế thời gian thực (UC09 / FR17)
       security:
         - BearerAuth: []
       parameters:
@@ -357,7 +357,7 @@ paths:
     post:
       tags:
         - 04. Ride Lifecycle & Tracking
-      summary: Tài xế nhận cuốc trong 20 giây (UC12 / FR12 / RULE-02 / ASM-03)
+      summary: Tài xế nhận cuốc trong 20 giây (UC07 / FR12 / RULE-02 / ASM-03)
       security:
         - BearerAuth: []
       parameters:
@@ -377,7 +377,7 @@ paths:
     post:
       tags:
         - 04. Ride Lifecycle & Tracking
-      summary: Tài xế từ chối cuốc xe (UC13 / FR12 / FR13 / RULE-03 / EX02)
+      summary: Tài xế từ chối cuốc xe (UC07 / FR12 / FR13 / RULE-03 / EX02)
       security:
         - BearerAuth: []
       parameters:
@@ -395,7 +395,7 @@ paths:
     put:
       tags:
         - 04. Ride Lifecycle & Tracking
-      summary: Cập nhật trạng thái vòng đời cuốc xe (UC14 / FR16 / FR19)
+      summary: Cập nhật trạng thái vòng đời cuốc xe (UC08 / FR16 / FR19)
       description: Chuyển đổi trạng thái `DRIVER_ARRIVED` -> `IN_TRANSIT` -> `COMPLETED` (chuyển sang `PAYMENT_PENDING`).
       security:
         - BearerAuth: []
@@ -423,7 +423,7 @@ paths:
     get:
       tags:
         - 04. Ride Lifecycle & Tracking
-      summary: Xem lịch sử chuyến đi phân trang (UC09 / FR18)
+      summary: Xem lịch sử chuyến đi phân trang (UC10 / FR18
       security:
         - BearerAuth: []
       parameters:
@@ -448,7 +448,7 @@ paths:
     post:
       tags:
         - 05. Payments & Invoices
-      summary: Thanh toán cước thực tế (UC07 / FR19 / FR20 / FR21 / RULE-04 / RULE-05)
+      summary: Thanh toán cước thực tế (UC11 / FR19 / FR20 / FR21 / RULE-04 / RULE-05)
       security:
         - BearerAuth: []
       requestBody:
@@ -499,7 +499,7 @@ paths:
     post:
       tags:
         - 05. Payments & Invoices
-      summary: Tài xế xác nhận đã nhận tiền mặt từ khách (UC07 / FR20)
+      summary: Tài xế xác nhận đã nhận tiền mặt từ khách (UC11 / FR20)
       security:
         - BearerAuth: []
       parameters:
@@ -554,7 +554,7 @@ paths:
     get:
       tags:
         - 05. Payments & Invoices
-      summary: Xem hóa đơn chi tiết cuốc xe (UC07)
+      summary: Xem hóa đơn chi tiết cuốc xe (UC11)
       security:
         - BearerAuth: []
       parameters:
@@ -609,7 +609,7 @@ paths:
     post:
       tags:
         - 07. Reviews & Ratings
-      summary: Khách hàng chấm điểm 1-5 sao và nhận xét tài xế (UC08 / FR25)
+      summary: Khách hàng chấm điểm 1-5 sao và nhận xét tài xế (UC12 / FR25)
       security:
         - BearerAuth: []
       requestBody:
@@ -629,7 +629,7 @@ paths:
     get:
       tags:
         - 08. Admin & Operations
-      summary: Quản trị viên xem & tìm kiếm người dùng (UC15 / FR26)
+      summary: Quản trị viên xem & tìm kiếm người dùng (UC13 / FR26)
       security:
         - BearerAuth: []
       parameters:
@@ -649,7 +649,7 @@ paths:
     put:
       tags:
         - 08. Admin & Operations
-      summary: Khóa hoặc Mở khóa tài khoản (UC15 / FR26 / RULE-07)
+      summary: Khóa hoặc Mở khóa tài khoản (UC13 / FR26 / RULE-07)
       security:
         - BearerAuth: []
       parameters:
@@ -681,7 +681,7 @@ paths:
     put:
       tags:
         - 08. Admin & Operations
-      summary: Phê duyệt / Từ chối xe đối tác tài xế (UC15 / FR27 / RULE-07)
+      summary: Phê duyệt / Từ chối xe đối tác tài xế (UC13 / FR27 / RULE-07)
       security:
         - BearerAuth: []
       parameters:
@@ -718,7 +718,7 @@ paths:
     get:
       tags:
         - 08. Admin & Operations
-      summary: Giám sát các cuốc xe đang hoạt động trực tiếp trên bản đồ (UC16 / FR28)
+      summary: Giám sát các cuốc xe đang hoạt động trực tiếp trên bản đồ (UC14 / FR28)
       security:
         - BearerAuth: []
       responses:
@@ -729,7 +729,7 @@ paths:
     post:
       tags:
         - 08. Admin & Operations
-      summary: Can thiệp cưỡng chế cuốc xe gặp sự cố & Ghi Audit Log (UC16 / FR29 / FR30 / RULE-07 / EX08)
+      summary: Can thiệp cưỡng chế cuốc xe gặp sự cố & Ghi Audit Log (UC14 / FR29 / FR30 / RULE-07 / EX08)
       security:
         - BearerAuth: []
       parameters:
@@ -775,7 +775,7 @@ paths:
     get:
       tags:
         - 09. Analytics & KPI Reports
-      summary: Báo cáo chỉ số KPI tổng quan doanh thu & chuyến xe (UC17 / FR31)
+      summary: Báo cáo chỉ số KPI tổng quan doanh thu & chuyến xe (UC14 / FR31)
       security:
         - BearerAuth: []
       responses:
@@ -786,7 +786,7 @@ paths:
     get:
       tags:
         - 09. Analytics & KPI Reports
-      summary: Báo cáo hiệu suất và sao đánh giá của tài xế (UC17 / FR32)
+      summary: Báo cáo hiệu suất và sao đánh giá của tài xế (UC14 / FR32)
       security:
         - BearerAuth: []
       responses:

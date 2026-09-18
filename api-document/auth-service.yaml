@@ -9,7 +9,7 @@ info:
       - `UC01`: Đăng ký tài khoản (Khách hàng)
       - `UC02`: Đăng nhập hệ thống (Khách hàng, Tài xế, Vận hành, Lãnh đạo)
       - `UC03`: Cập nhật thông tin cá nhân
-      - `UC10`: Đăng ký hồ sơ & phương tiện (Tài xế)
+      - `UC04`: Đăng ký hồ sơ & phương tiện (Tài xế)
     - **Yêu cầu chức năng**: `FR01`, `FR02`, `FR03`, `FR04`, `FR05`, `FR23`
     - **Cơ sở dữ liệu đề xuất**: PostgreSQL / MongoDB (`UserDB`)
   version: 1.0.0-mvp
@@ -342,7 +342,7 @@ paths:
     post:
       tags:
         - Driver Profile & Vehicle
-      summary: Đăng ký hồ sơ giấy phép lái xe & thông tin phương tiện (UC10 / FR05)
+      summary: Đăng ký hồ sơ giấy phép lái xe & thông tin phương tiện (UC04 / FR05)
       description: |
         Tài xế khai báo Giấy phép lái xe (GPLX), Loại dịch vụ xe (BIKE, CAR_4, CAR_7),
         Biển số đăng ký, Nhãn hiệu, Dòng xe và ảnh giấy tờ liên quan để chờ Quản trị viên duyệt.
@@ -369,7 +369,7 @@ paths:
     get:
       tags:
         - Driver Profile & Vehicle
-      summary: Tra cứu thông tin xe và trạng thái duyệt của tài xế (UC10)
+      summary: Tra cứu thông tin xe và trạng thái duyệt của tài xế (UC04)
       operationId: getDriverVehicle
       security:
         - BearerAuth: []

@@ -6,10 +6,9 @@ info:
     - **Đề tài**: Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh (CAB System)
     - **Tác giả**: Nguyễn Hữu Lộc - MSSV: 23635401
     - **Phạm vi Use Case**:
-      - `UC08`: Đánh giá tài xế (Khách hàng)
-      - `UC15`: Quản lý người dùng & Duyệt hồ sơ phương tiện tài xế (Nhân viên Vận hành)
-      - `UC16`: Giám sát bản đồ số thời gian thực & Can thiệp sự cố cuốc xe (Nhân viên Vận hành)
-      - `UC17`: Xem báo cáo thống kê KPI doanh thu & hiệu suất (Ban lãnh đạo)
+      - `UC12`: Đánh giá & Phản hồi tài xế (Khách hàng)
+      - `UC13`: Quản lý tài khoản & Duyệt hồ sơ tài xế (Nhân viên Vận hành)
+      - `UC14`: Giám sát vận hành bản đồ số & Báo cáo thống kê KPI doanh thu (Vận hành & Lãnh đạo)
     - **Yêu cầu chức năng**: `FR25`, `FR26`, `FR27`, `FR28`, `FR29`, `FR30`, `FR31`, `FR32`
     - **Quy tắc nghiệp vụ**:
       - `RULE-07`: Mọi thao tác can thiệp quản trị bắt buộc nhập lý do, tự động ghi nhật ký kiểm toán `audit_logs` (chế độ chỉ đọc, không thể sửa/xóa).
@@ -41,7 +40,7 @@ paths:
     post:
       tags:
         - Reviews & Ratings
-      summary: Khách hàng chấm điểm và đánh giá tài xế (UC08 / FR25)
+      summary: Khách hàng chấm điểm và đánh giá tài xế (UC12 / FR25)
       description: Cho phép chấm điểm 1-5 sao, chọn tag nhận xét và nhập bình luận sau khi cuốc xe hoàn tất.
       operationId: submitDriverReview
       security:
@@ -81,7 +80,7 @@ paths:
     get:
       tags:
         - User & Driver Administration
-      summary: Quản trị viên xem và tìm kiếm danh sách người dùng (UC15 / FR26)
+      summary: Quản trị viên xem và tìm kiếm danh sách người dùng (UC13 / FR26)
       operationId: getAdminUsers
       security:
         - BearerAuth: []
@@ -131,7 +130,7 @@ paths:
     put:
       tags:
         - User & Driver Administration
-      summary: Khóa hoặc Mở khóa tài khoản người dùng (UC15 / FR26 / RULE-07)
+      summary: Khóa hoặc Mở khóa tài khoản người dùng (UC13 / FR26 / RULE-07)
       description: Can thiệp trạng thái hoạt động của tài khoản; bắt buộc nhập lý do để lưu Audit Log.
       operationId: updateUserAccountStatus
       security:
@@ -185,7 +184,7 @@ paths:
     put:
       tags:
         - User & Driver Administration
-      summary: Phê duyệt hoặc từ chối hồ sơ phương tiện của Tài xế (UC15 / FR27 / RULE-07)
+      summary: Phê duyệt hoặc từ chối hồ sơ phương tiện của Tài xế (UC13 / FR27 / RULE-07)
       operationId: approveDriverVehicle
       security:
         - BearerAuth: []
@@ -241,7 +240,7 @@ paths:
     get:
       tags:
         - Live Monitoring & Incident Intervention
-      summary: Giám sát các cuốc xe đang hoạt động trên bản đồ số trực tiếp (UC16 / FR28)
+      summary: Giám sát các cuốc xe đang hoạt động trên bản đồ số trực tiếp (UC14 / FR28)
       description: Trả về danh sách tất cả các cuốc xe đang ở trạng thái `MATCHING`, `ACCEPTED`, `DRIVER_ARRIVED`, `IN_TRANSIT` kèm tọa độ GPS mới nhất.
       operationId: getLiveActiveRides
       security:
@@ -266,7 +265,7 @@ paths:
     post:
       tags:
         - Live Monitoring & Incident Intervention
-      summary: Quản trị viên can thiệp xử lý sự cố cuốc xe khẩn cấp (UC16 / FR29 / FR30 / RULE-07 / EX08)
+      summary: Quản trị viên can thiệp xử lý sự cố cuốc xe khẩn cấp (UC14 / FR29 / FR30 / RULE-07 / EX08)
       description: |
         Áp dụng khi cuốc xe bị kẹt trạng thái hoặc xảy ra sự cố va chạm, tài xế không bấm được app.
         **Bắt buộc nhập trường `reason`**; hệ thống tự động ghi nhật ký kiểm toán `audit_logs`.
@@ -371,7 +370,7 @@ paths:
     get:
       tags:
         - Analytics & Audit Logs
-      summary: Báo cáo chỉ số KPI vận hành & doanh thu tổng quan (UC17 / FR31)
+      summary: Báo cáo chỉ số KPI vận hành & doanh thu tổng quan (UC14 / FR31)
       description: Thống kê tổng doanh thu, số cuốc thành công, tỷ lệ hoàn thành, tỷ lệ hủy.
       operationId: getAnalyticsOverview
       security:
@@ -403,7 +402,7 @@ paths:
     get:
       tags:
         - Analytics & Audit Logs
-      summary: Báo cáo hiệu suất và điểm đánh giá của đối tác tài xế (UC17 / FR32)
+      summary: Báo cáo hiệu suất và điểm đánh giá của đối tác tài xế (UC14 / FR32)
       operationId: getDriverPerformanceReport
       security:
         - BearerAuth: []

@@ -6,14 +6,12 @@ info:
     - **Đề tài**: Nền tảng Đặt xe Trực tuyến & Điều phối Thông minh (CAB System)
     - **Tác giả**: Nguyễn Hữu Lộc - MSSV: 23635401
     - **Phạm vi Use Case**:
-      - `UC04`: Đặt xe & Dự toán cước phí (Khách hàng)
-      - `UC05`: Hủy yêu cầu đặt xe & Phí phạt hủy (Khách hàng)
-      - `UC06`: Theo dõi chuyến đi & GPS thời gian thực (Khách hàng)
-      - `UC09`: Xem lịch sử chuyến đi (Khách hàng & Tài xế)
-      - `UC11`: Bật / Tắt trạng thái hoạt động Online / Offline (Tài xế)
-      - `UC12`: Tiếp nhận chuyến xe (Tài xế - Timeout 20s)
-      - `UC13`: Từ chối chuyến xe (Tài xế)
-      - `UC14`: Cập nhật tiến trình cuốc xe (`DRIVER_ARRIVED` -> `IN_TRANSIT` -> `COMPLETED`)
+      - `UC05`: Đặt xe & Dự toán cước phí (Khách hàng)
+      - `UC06`: Hủy yêu cầu đặt xe & Phí phạt hủy (Khách hàng)
+      - `UC07`: Tiếp nhận & Phản hồi chuyến xe (Tài xế - Online/Offline, Nhận/Từ chối cuốc)
+      - `UC08`: Cập nhật tiến trình cuốc xe (`DRIVER_ARRIVED` -> `IN_TRANSIT` -> `COMPLETED`)
+      - `UC09`: Theo dõi chuyến đi & GPS thời gian thực (Khách hàng)
+      - `UC10`: Xem lịch sử chuyến đi (Khách hàng & Tài xế)
     - **Yêu cầu chức năng**: `FR06`, `FR07`, `FR08`, `FR09`, `FR10`, `FR11`, `FR12`, `FR13`, `FR14`, `FR15`, `FR16`, `FR17`, `FR18`
     - **Công nghệ lưu trữ**: PostgreSQL (`RideDB`) + Redis Geospatial (quét tài xế qua `GEORADIUS`) + WebSocket
     - **Tham số vận hành**: ASM-01 (Công thức cước), ASM-02 (Bán kính quét 3km - 5km), ASM-03 (Timeout 20s), ASM-04 (Hủy sau 2 phút phạt 10.000đ), ASM-06 (Buffer 50 điểm GPS offline).
@@ -84,7 +82,7 @@ paths:
     post:
       tags:
         - Ride Booking & Estimation
-      summary: Khởi tạo yêu cầu đặt chuyến xe mới (UC04 / FR06 / FR10 / RULE-01)
+      summary: Khởi tạo yêu cầu đặt chuyến xe mới (UC05 / FR06 / FR10 / RULE-01)
       description: |
         Khách hàng gửi yêu cầu đặt xe. Hệ thống tạo cuốc xe ở trạng thái `MATCHING`,
         kích hoạt thuật toán Redis Geospatial quét tài xế gần nhất trong bán kính 3km (mở rộng 5km).
@@ -123,7 +121,7 @@ paths:
     get:
       tags:
         - Trip Lifecycle & Tracking
-      summary: Lấy thông tin chi tiết và trạng thái cuốc xe (UC06 / FR17)
+      summary: Lấy thông tin chi tiết và trạng thái cuốc xe (UC09 / FR17)
       description: Tra cứu trạng thái hiện tại của chuyến, thông tin tài xế, xe và tọa độ GPS mới nhất.
       operationId: getRideById
       security:
@@ -158,7 +156,7 @@ paths:
     post:
       tags:
         - Ride Booking & Estimation
-      summary: Hủy yêu cầu chuyến xe & Áp dụng phí phạt hủy (UC05 / FR15 / RULE-04 / ASM-04)
+      summary: Hủy yêu cầu chuyến xe & Áp dụng phí phạt hủy (UC06 / FR15 / RULE-04 / ASM-04)
       description: |
         - Hủy khi trạng thái `MATCHING`: **Miễn phí**
         - Hủy trong vòng $\le 2$ phút sau khi tài xế nhận (`ACCEPTED`): **Miễn phí**
@@ -211,7 +209,7 @@ paths:
     get:
       tags:
         - Trip Lifecycle & Tracking
-      summary: Tra cứu lịch sử chuyến đi phân trang (UC09 / FR18)
+      summary: Tra cứu lịch sử chuyến đi phân trang (UC10 / FR18)
       operationId: getRideHistory
       security:
         - BearerAuth: []
@@ -255,7 +253,7 @@ paths:
     put:
       tags:
         - Driver Dispatch Operations
-      summary: Bật/Tắt trạng thái hoạt động của Tài xế (UC11 / FR08)
+      summary: Bật/Tắt trạng thái hoạt động của Tài xế (UC07 / FR08)
       description: Chuyển đổi giữa `ONLINE` (Sẵn sàng nhận cuốc) và `OFFLINE` (Nghỉ ngơi).
       operationId: updateDriverStatus
       security:
@@ -328,7 +326,7 @@ paths:
     post:
       tags:
         - Driver Dispatch Operations
-      summary: Tài xế chấp nhận lời mời chuyến xe (UC12 / FR12 / RULE-02 / ASM-03)
+      summary: Tài xế chấp nhận lời mời chuyến xe (UC07 / FR12 / RULE-02 / ASM-03)
       description: |
         Tài xế bấm nhận chuyến trong thời gian đếm ngược $\le 20$ giây.
         Trạng thái chuyển sang `ACCEPTED`, khóa tài xế và gửi Push báo cho Khách hàng.
@@ -364,7 +362,7 @@ paths:
     post:
       tags:
         - Driver Dispatch Operations
-      summary: Tài xế từ chối lời mời chuyến xe (UC13 / FR12 / FR13 / RULE-03 / EX02)
+      summary: Tài xế từ chối lời mời chuyến xe (UC07 / FR12 / FR13 / RULE-03 / EX02)
       description: Thu hồi lời mời ngay lập tức và chuyển tiếp cuốc xe cho tài xế phù hợp kế tiếp.
       operationId: rejectRideOffer
       security:
@@ -405,7 +403,7 @@ paths:
     put:
       tags:
         - Trip Lifecycle & Tracking
-      summary: Cập nhật tiến trình vòng đời chuyến đi (UC14 / FR16 / FR19)
+      summary: Cập nhật tiến trình vòng đời chuyến đi (UC08 / FR16 / FR19)
       description: |
         Tài xế cập nhật trạng thái di chuyển theo thứ tự State Machine:
         1. `DRIVER_ARRIVED`: Tài xế đã đến điểm đón (GPS $\le 50$m).

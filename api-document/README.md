@@ -13,12 +13,12 @@ Thư mục này được chia thành các file đặc tả độc lập theo đ�
 
 | Tên File | Phân hệ Microservice | Các Use Cases & Chức năng bao phủ |
 | :--- | :--- | :--- |
-| [`openapi.yaml`](file:///t:/New%20folder/23635401_NguyenHuuLoc_CabSystem/api-document/openapi.yaml) | **Master Spec (Toàn hệ thống)** | Tổng hợp toàn bộ 5 phân hệ, 17 Use Cases và 32 FRs để dễ dàng import 1-Click vào Swagger/Postman |
-| [`auth-service.yaml`](file:///t:/New%20folder/23635401_NguyenHuuLoc_CabSystem/api-document/auth-service.yaml) | **Auth & User Service** | `UC01` (Đăng ký, SMS OTP), `UC02` (Đăng nhập JWT, Quên mật khẩu), `UC03` (Hồ sơ cá nhân), `UC10` (Đăng ký phương tiện tài xế) |
-| [`ride-service.yaml`](file:///t:/New%20folder/23635401_NguyenHuuLoc_CabSystem/api-document/ride-service.yaml) | **Ride & Dispatch Service** | `UC04` (Tính cước ước tính & Đặt xe), `UC05` (Hủy chuyến & Phạt 10k), `UC06` (Tracking GPS), `UC09` (Lịch sử), `UC11` (Bật/Tắt Online), `UC12` (Nhận cuốc 20s), `UC13` (Từ chối cuốc), `UC14` (Tiến trình cuốc xe) |
-| [`payment-service.yaml`](file:///t:/New%20folder/23635401_NguyenHuuLoc_CabSystem/api-document/payment-service.yaml) | **Fare & Payment Service** | `UC07` (Chốt cước thực tế, Thanh toán tiền mặt/thẻ số Tokenization, Fallback sang tiền mặt khi lỗi cổng ngoài, Hóa đơn điện tử) |
-| [`notification-service.yaml`](file:///t:/New%20folder/23635401_NguyenHuuLoc_CabSystem/api-document/notification-service.yaml) | **Notification Service** | `FR23` (SMS OTP), `FR24` (Push Notifications thời gian thực khi tìm thấy xe, tài xế đến nơi, cuốc hoàn tất) |
-| [`admin-service.yaml`](file:///t:/New%20folder/23635401_NguyenHuuLoc_CabSystem/api-document/admin-service.yaml) | **Admin & Analytics Service** | `UC08` (Đánh giá tài xế), `UC15` (Khóa/Mở tài khoản, duyệt xe), `UC16` (Live Monitor bản đồ, can thiệp sự cố cưỡng chế), `UC17` (Báo cáo KPI doanh thu, Audit Logs bắt buộc) |
+| [`openapi.yaml`](file:///c:/Users/NGUYEN%20HUU%20LOC/23635401_NguyenHuuLoc_CabSystem/api-document/openapi.yaml) | **Master Spec (Toàn hệ thống)** | Tổng hợp toàn bộ 5 phân hệ, 14 Use Cases cốt lõi và 32 FRs để dễ dàng import 1-Click vào Swagger/Postman |
+| [`auth-service.yaml`](file:///c:/Users/NGUYEN%20HUU%20LOC/23635401_NguyenHuuLoc_CabSystem/api-document/auth-service.yaml) | **Auth & User Service** | `UC01` (Đăng ký, SMS OTP), `UC02` (Đăng nhập JWT, Quên mật khẩu), `UC03` (Hồ sơ cá nhân), `UC04` (Đăng ký phương tiện tài xế) |
+| [`ride-service.yaml`](file:///c:/Users/NGUYEN%20HUU%20LOC/23635401_NguyenHuuLoc_CabSystem/api-document/ride-service.yaml) | **Ride & Dispatch Service** | `UC05` (Tính cước ước tính & Đặt xe), `UC06` (Hủy chuyến & Phạt 10k), `UC07` (Tiếp nhận & Phản hồi chuyến xe, Bật/Tắt Online, Nhận cuốc 20s, Từ chối cuốc), `UC08` (Tiến trình cuốc xe), `UC09` (Tracking GPS), `UC10` (Xem lịch sử) |
+| [`payment-service.yaml`](file:///c:/Users/NGUYEN%20HUU%20LOC/23635401_NguyenHuuLoc_CabSystem/api-document/payment-service.yaml) | **Fare & Payment Service** | `UC11` (Chốt cước thực tế, Thanh toán tiền mặt/thẻ số Tokenization, Fallback sang tiền mặt khi lỗi cổng ngoài, Hóa đơn điện tử) |
+| [`notification-service.yaml`](file:///c:/Users/NGUYEN%20HUU%20LOC/23635401_NguyenHuuLoc_CabSystem/api-document/notification-service.yaml) | **Notification Service** | `FR23` (SMS OTP), `FR24` (Push Notifications thời gian thực khi tìm thấy xe, tài xế đến nơi, cuốc hoàn tất) |
+| [`admin-service.yaml`](file:///c:/Users/NGUYEN%20HUU%20LOC/23635401_NguyenHuuLoc_CabSystem/api-document/admin-service.yaml) | **Admin & Analytics Service** | `UC12` (Đánh giá tài xế), `UC13` (Khóa/Mở tài khoản, duyệt xe), `UC14` (Live Monitor bản đồ, can thiệp sự cố, Báo cáo KPI doanh thu, Audit Logs bắt buộc) |
 
 ---
 
